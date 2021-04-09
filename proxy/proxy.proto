@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+option go_package = "/proxy";
+
 service proxy {
   rpc Status(ProxyStatusReq) returns (ProxyStatusResp) {}
   rpc Update(ProxyUpdateReq) returns (ProxyUpdateResp) {}
