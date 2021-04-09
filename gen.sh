@@ -1,2 +1,2 @@
-protoc --go_out=proxy  proxy.proto
-protoc --go_out=.  supervisor.proto
+protoc --go_out=. --go-grpc_out=.  proxy/proxy.proto
+protoc --go_out=../ --go-grpc_out=../  supervisor.proto

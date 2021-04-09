@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+option go_package = "/supervisor";
+
 service Supervisor {
   rpc Apply(ApplyReq) returns (ApplyResp) {}
 }
