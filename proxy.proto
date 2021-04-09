@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+service proxy {
+  rpc Status(ProxyStatusReq) returns (ProxyStatusResp);
+  rpc Update(ProxyUpdateReq) returns (ProxyUpdateResp);
+}
+
+message ProxyStatusReq {
+  string msg = 1;
+}
+
+message ProxyStatusResp {
+  uint32 listen_port = 1;
+  string remote = 2;
+}
+
+
+message ProxyUpdateReq {
+  uint32 listen_port = 1;
+  string remote = 2;
+}
+
+message ProxyUpdateResp {
+  string msg = 1;
+}
+
