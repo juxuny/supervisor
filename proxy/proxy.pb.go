@@ -18,168 +18,214 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-type ProxyStatusReq struct {
-	Msg                  string   `protobuf:"bytes,1,opt,name=msg" json:"msg,omitempty"`
+type Status struct {
+	ListenPort           uint32   `protobuf:"varint,1,opt,name=listen_port,json=listenPort" json:"listen_port,omitempty"`
+	Remote               string   `protobuf:"bytes,2,opt,name=remote" json:"remote,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-" bson:"-"`
 	XXX_unrecognized     []byte   `json:"-" bson:"-"`
 	XXX_sizecache        int32    `json:"-" bson:"-"`
 }
 
-func (m *ProxyStatusReq) Reset()         { *m = ProxyStatusReq{} }
-func (m *ProxyStatusReq) String() string { return proto.CompactTextString(m) }
-func (*ProxyStatusReq) ProtoMessage()    {}
-func (*ProxyStatusReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_proxy_97b83cb2268412b4, []int{0}
+func (m *Status) Reset()         { *m = Status{} }
+func (m *Status) String() string { return proto.CompactTextString(m) }
+func (*Status) ProtoMessage()    {}
+func (*Status) Descriptor() ([]byte, []int) {
+	return fileDescriptor_proxy_c4b8b1e2cfeb19e4, []int{0}
 }
-func (m *ProxyStatusReq) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ProxyStatusReq.Unmarshal(m, b)
+func (m *Status) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Status.Unmarshal(m, b)
 }
-func (m *ProxyStatusReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ProxyStatusReq.Marshal(b, m, deterministic)
+func (m *Status) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Status.Marshal(b, m, deterministic)
 }
-func (dst *ProxyStatusReq) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProxyStatusReq.Merge(dst, src)
+func (dst *Status) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Status.Merge(dst, src)
 }
-func (m *ProxyStatusReq) XXX_Size() int {
-	return xxx_messageInfo_ProxyStatusReq.Size(m)
+func (m *Status) XXX_Size() int {
+	return xxx_messageInfo_Status.Size(m)
 }
-func (m *ProxyStatusReq) XXX_DiscardUnknown() {
-	xxx_messageInfo_ProxyStatusReq.DiscardUnknown(m)
+func (m *Status) XXX_DiscardUnknown() {
+	xxx_messageInfo_Status.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ProxyStatusReq proto.InternalMessageInfo
+var xxx_messageInfo_Status proto.InternalMessageInfo
 
-func (m *ProxyStatusReq) GetMsg() string {
+func (m *Status) GetListenPort() uint32 {
+	if m != nil {
+		return m.ListenPort
+	}
+	return 0
+}
+
+func (m *Status) GetRemote() string {
+	if m != nil {
+		return m.Remote
+	}
+	return ""
+}
+
+type StatusReq struct {
+	Code                 uint32   `protobuf:"varint,1,opt,name=code" json:"code,omitempty"`
+	Msg                  string   `protobuf:"bytes,2,opt,name=msg" json:"msg,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-" bson:"-"`
+	XXX_unrecognized     []byte   `json:"-" bson:"-"`
+	XXX_sizecache        int32    `json:"-" bson:"-"`
+}
+
+func (m *StatusReq) Reset()         { *m = StatusReq{} }
+func (m *StatusReq) String() string { return proto.CompactTextString(m) }
+func (*StatusReq) ProtoMessage()    {}
+func (*StatusReq) Descriptor() ([]byte, []int) {
+	return fileDescriptor_proxy_c4b8b1e2cfeb19e4, []int{1}
+}
+func (m *StatusReq) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_StatusReq.Unmarshal(m, b)
+}
+func (m *StatusReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_StatusReq.Marshal(b, m, deterministic)
+}
+func (dst *StatusReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StatusReq.Merge(dst, src)
+}
+func (m *StatusReq) XXX_Size() int {
+	return xxx_messageInfo_StatusReq.Size(m)
+}
+func (m *StatusReq) XXX_DiscardUnknown() {
+	xxx_messageInfo_StatusReq.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_StatusReq proto.InternalMessageInfo
+
+func (m *StatusReq) GetCode() uint32 {
+	if m != nil {
+		return m.Code
+	}
+	return 0
+}
+
+func (m *StatusReq) GetMsg() string {
 	if m != nil {
 		return m.Msg
 	}
 	return ""
 }
 
-type ProxyStatusResp struct {
-	ListenPort           uint32   `protobuf:"varint,1,opt,name=listen_port,json=listenPort" json:"listen_port,omitempty"`
-	Remote               string   `protobuf:"bytes,2,opt,name=remote" json:"remote,omitempty"`
+type StatusResp struct {
+	Status               *Status  `protobuf:"bytes,1,opt,name=status" json:"status,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-" bson:"-"`
 	XXX_unrecognized     []byte   `json:"-" bson:"-"`
 	XXX_sizecache        int32    `json:"-" bson:"-"`
 }
 
-func (m *ProxyStatusResp) Reset()         { *m = ProxyStatusResp{} }
-func (m *ProxyStatusResp) String() string { return proto.CompactTextString(m) }
-func (*ProxyStatusResp) ProtoMessage()    {}
-func (*ProxyStatusResp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_proxy_97b83cb2268412b4, []int{1}
+func (m *StatusResp) Reset()         { *m = StatusResp{} }
+func (m *StatusResp) String() string { return proto.CompactTextString(m) }
+func (*StatusResp) ProtoMessage()    {}
+func (*StatusResp) Descriptor() ([]byte, []int) {
+	return fileDescriptor_proxy_c4b8b1e2cfeb19e4, []int{2}
 }
-func (m *ProxyStatusResp) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ProxyStatusResp.Unmarshal(m, b)
+func (m *StatusResp) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_StatusResp.Unmarshal(m, b)
 }
-func (m *ProxyStatusResp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ProxyStatusResp.Marshal(b, m, deterministic)
+func (m *StatusResp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_StatusResp.Marshal(b, m, deterministic)
 }
-func (dst *ProxyStatusResp) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProxyStatusResp.Merge(dst, src)
+func (dst *StatusResp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StatusResp.Merge(dst, src)
 }
-func (m *ProxyStatusResp) XXX_Size() int {
-	return xxx_messageInfo_ProxyStatusResp.Size(m)
+func (m *StatusResp) XXX_Size() int {
+	return xxx_messageInfo_StatusResp.Size(m)
 }
-func (m *ProxyStatusResp) XXX_DiscardUnknown() {
-	xxx_messageInfo_ProxyStatusResp.DiscardUnknown(m)
+func (m *StatusResp) XXX_DiscardUnknown() {
+	xxx_messageInfo_StatusResp.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ProxyStatusResp proto.InternalMessageInfo
+var xxx_messageInfo_StatusResp proto.InternalMessageInfo
 
-func (m *ProxyStatusResp) GetListenPort() uint32 {
+func (m *StatusResp) GetStatus() *Status {
 	if m != nil {
-		return m.ListenPort
+		return m.Status
+	}
+	return nil
+}
+
+type UpdateReq struct {
+	Status               *Status  `protobuf:"bytes,1,opt,name=status" json:"status,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-" bson:"-"`
+	XXX_unrecognized     []byte   `json:"-" bson:"-"`
+	XXX_sizecache        int32    `json:"-" bson:"-"`
+}
+
+func (m *UpdateReq) Reset()         { *m = UpdateReq{} }
+func (m *UpdateReq) String() string { return proto.CompactTextString(m) }
+func (*UpdateReq) ProtoMessage()    {}
+func (*UpdateReq) Descriptor() ([]byte, []int) {
+	return fileDescriptor_proxy_c4b8b1e2cfeb19e4, []int{3}
+}
+func (m *UpdateReq) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateReq.Unmarshal(m, b)
+}
+func (m *UpdateReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateReq.Marshal(b, m, deterministic)
+}
+func (dst *UpdateReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateReq.Merge(dst, src)
+}
+func (m *UpdateReq) XXX_Size() int {
+	return xxx_messageInfo_UpdateReq.Size(m)
+}
+func (m *UpdateReq) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateReq.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateReq proto.InternalMessageInfo
+
+func (m *UpdateReq) GetStatus() *Status {
+	if m != nil {
+		return m.Status
+	}
+	return nil
+}
+
+type UpdateResp struct {
+	Code                 uint32   `protobuf:"varint,1,opt,name=code" json:"code,omitempty"`
+	Msg                  string   `protobuf:"bytes,2,opt,name=msg" json:"msg,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-" bson:"-"`
+	XXX_unrecognized     []byte   `json:"-" bson:"-"`
+	XXX_sizecache        int32    `json:"-" bson:"-"`
+}
+
+func (m *UpdateResp) Reset()         { *m = UpdateResp{} }
+func (m *UpdateResp) String() string { return proto.CompactTextString(m) }
+func (*UpdateResp) ProtoMessage()    {}
+func (*UpdateResp) Descriptor() ([]byte, []int) {
+	return fileDescriptor_proxy_c4b8b1e2cfeb19e4, []int{4}
+}
+func (m *UpdateResp) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateResp.Unmarshal(m, b)
+}
+func (m *UpdateResp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateResp.Marshal(b, m, deterministic)
+}
+func (dst *UpdateResp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateResp.Merge(dst, src)
+}
+func (m *UpdateResp) XXX_Size() int {
+	return xxx_messageInfo_UpdateResp.Size(m)
+}
+func (m *UpdateResp) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateResp.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateResp proto.InternalMessageInfo
+
+func (m *UpdateResp) GetCode() uint32 {
+	if m != nil {
+		return m.Code
 	}
 	return 0
 }
 
-func (m *ProxyStatusResp) GetRemote() string {
-	if m != nil {
-		return m.Remote
-	}
-	return ""
-}
-
-type ProxyUpdateReq struct {
-	ListenPort           uint32   `protobuf:"varint,1,opt,name=listen_port,json=listenPort" json:"listen_port,omitempty"`
-	Remote               string   `protobuf:"bytes,2,opt,name=remote" json:"remote,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-" bson:"-"`
-	XXX_unrecognized     []byte   `json:"-" bson:"-"`
-	XXX_sizecache        int32    `json:"-" bson:"-"`
-}
-
-func (m *ProxyUpdateReq) Reset()         { *m = ProxyUpdateReq{} }
-func (m *ProxyUpdateReq) String() string { return proto.CompactTextString(m) }
-func (*ProxyUpdateReq) ProtoMessage()    {}
-func (*ProxyUpdateReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_proxy_97b83cb2268412b4, []int{2}
-}
-func (m *ProxyUpdateReq) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ProxyUpdateReq.Unmarshal(m, b)
-}
-func (m *ProxyUpdateReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ProxyUpdateReq.Marshal(b, m, deterministic)
-}
-func (dst *ProxyUpdateReq) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProxyUpdateReq.Merge(dst, src)
-}
-func (m *ProxyUpdateReq) XXX_Size() int {
-	return xxx_messageInfo_ProxyUpdateReq.Size(m)
-}
-func (m *ProxyUpdateReq) XXX_DiscardUnknown() {
-	xxx_messageInfo_ProxyUpdateReq.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ProxyUpdateReq proto.InternalMessageInfo
-
-func (m *ProxyUpdateReq) GetListenPort() uint32 {
-	if m != nil {
-		return m.ListenPort
-	}
-	return 0
-}
-
-func (m *ProxyUpdateReq) GetRemote() string {
-	if m != nil {
-		return m.Remote
-	}
-	return ""
-}
-
-type ProxyUpdateResp struct {
-	Msg                  string   `protobuf:"bytes,1,opt,name=msg" json:"msg,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-" bson:"-"`
-	XXX_unrecognized     []byte   `json:"-" bson:"-"`
-	XXX_sizecache        int32    `json:"-" bson:"-"`
-}
-
-func (m *ProxyUpdateResp) Reset()         { *m = ProxyUpdateResp{} }
-func (m *ProxyUpdateResp) String() string { return proto.CompactTextString(m) }
-func (*ProxyUpdateResp) ProtoMessage()    {}
-func (*ProxyUpdateResp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_proxy_97b83cb2268412b4, []int{3}
-}
-func (m *ProxyUpdateResp) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ProxyUpdateResp.Unmarshal(m, b)
-}
-func (m *ProxyUpdateResp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ProxyUpdateResp.Marshal(b, m, deterministic)
-}
-func (dst *ProxyUpdateResp) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProxyUpdateResp.Merge(dst, src)
-}
-func (m *ProxyUpdateResp) XXX_Size() int {
-	return xxx_messageInfo_ProxyUpdateResp.Size(m)
-}
-func (m *ProxyUpdateResp) XXX_DiscardUnknown() {
-	xxx_messageInfo_ProxyUpdateResp.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ProxyUpdateResp proto.InternalMessageInfo
-
-func (m *ProxyUpdateResp) GetMsg() string {
+func (m *UpdateResp) GetMsg() string {
 	if m != nil {
 		return m.Msg
 	}
@@ -187,27 +233,30 @@ func (m *ProxyUpdateResp) GetMsg() string {
 }
 
 func init() {
-	proto.RegisterType((*ProxyStatusReq)(nil), "ProxyStatusReq")
-	proto.RegisterType((*ProxyStatusResp)(nil), "ProxyStatusResp")
-	proto.RegisterType((*ProxyUpdateReq)(nil), "ProxyUpdateReq")
-	proto.RegisterType((*ProxyUpdateResp)(nil), "ProxyUpdateResp")
+	proto.RegisterType((*Status)(nil), "Status")
+	proto.RegisterType((*StatusReq)(nil), "StatusReq")
+	proto.RegisterType((*StatusResp)(nil), "StatusResp")
+	proto.RegisterType((*UpdateReq)(nil), "UpdateReq")
+	proto.RegisterType((*UpdateResp)(nil), "UpdateResp")
 }
 
-func init() { proto.RegisterFile("proxy/proxy.proto", fileDescriptor_proxy_97b83cb2268412b4) }
+func init() { proto.RegisterFile("proxy/proxy.proto", fileDescriptor_proxy_c4b8b1e2cfeb19e4) }
 
-var fileDescriptor_proxy_97b83cb2268412b4 = []byte{
-	// 197 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2c, 0x28, 0xca, 0xaf,
-	0xa8, 0xd4, 0x07, 0x93, 0x7a, 0x05, 0x45, 0xf9, 0x25, 0xf9, 0x4a, 0x4a, 0x5c, 0x7c, 0x01, 0x20,
-	0x6e, 0x70, 0x49, 0x62, 0x49, 0x69, 0x71, 0x50, 0x6a, 0xa1, 0x90, 0x00, 0x17, 0x73, 0x6e, 0x71,
-	0xba, 0x04, 0xa3, 0x02, 0xa3, 0x06, 0x67, 0x10, 0x88, 0xa9, 0xe4, 0xc5, 0xc5, 0x8f, 0xa2, 0xa6,
-	0xb8, 0x40, 0x48, 0x9e, 0x8b, 0x3b, 0x27, 0xb3, 0xb8, 0x24, 0x35, 0x2f, 0xbe, 0x20, 0xbf, 0xa8,
-	0x04, 0xac, 0x98, 0x37, 0x88, 0x0b, 0x22, 0x14, 0x90, 0x5f, 0x54, 0x22, 0x24, 0xc6, 0xc5, 0x56,
-	0x94, 0x9a, 0x9b, 0x5f, 0x92, 0x2a, 0xc1, 0x04, 0x36, 0x08, 0xca, 0x53, 0xf2, 0x84, 0xda, 0x17,
-	0x5a, 0x90, 0x92, 0x58, 0x92, 0x0a, 0xb2, 0x8f, 0x6c, 0xa3, 0x94, 0xa1, 0xce, 0x82, 0x19, 0x55,
-	0x5c, 0x80, 0xe9, 0x76, 0xa3, 0x54, 0x2e, 0x56, 0xb0, 0x77, 0x85, 0x74, 0xb9, 0xd8, 0x20, 0xee,
-	0x17, 0xe2, 0xd7, 0x43, 0xf5, 0xb1, 0x94, 0x80, 0x1e, 0x9a, 0xf7, 0x94, 0x18, 0x40, 0xca, 0x21,
-	0xe6, 0xc2, 0x94, 0xc3, 0x1d, 0x0c, 0x53, 0x8e, 0xb0, 0x56, 0x89, 0xc1, 0x89, 0x23, 0x8a, 0x0d,
-	0x12, 0xac, 0x49, 0x6c, 0xe0, 0x70, 0x35, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0xb9, 0xdb, 0xfa,
-	0x6c, 0x6c, 0x01, 0x00, 0x00,
+var fileDescriptor_proxy_c4b8b1e2cfeb19e4 = []byte{
+	// 226 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x50, 0x4d, 0x4b, 0xc4, 0x30,
+	0x14, 0xdc, 0xfa, 0x11, 0xed, 0x04, 0x41, 0xdf, 0x41, 0x96, 0xbd, 0xec, 0x12, 0x2f, 0x3d, 0x68,
+	0xc4, 0xfa, 0x0b, 0xf4, 0x17, 0x68, 0xc5, 0x8b, 0x17, 0xa9, 0x36, 0x88, 0x60, 0x4d, 0x4c, 0x9e,
+	0xa0, 0xff, 0x5e, 0x9a, 0xa4, 0xed, 0xd1, 0xbd, 0x84, 0xf7, 0x26, 0x33, 0x99, 0xc9, 0xe0, 0xc4,
+	0x79, 0xfb, 0xf3, 0x7b, 0x19, 0x4f, 0xed, 0xbc, 0x65, 0xab, 0x6e, 0x20, 0x1e, 0xb8, 0xe5, 0xef,
+	0x40, 0x6b, 0xc8, 0x8f, 0xf7, 0xc0, 0xe6, 0xf3, 0xd9, 0x59, 0xcf, 0xcb, 0x62, 0x53, 0x54, 0x47,
+	0x0d, 0x12, 0x74, 0x67, 0x3d, 0xd3, 0x29, 0x84, 0x37, 0xbd, 0x65, 0xb3, 0xdc, 0xd9, 0x14, 0x55,
+	0xd9, 0xe4, 0x4d, 0x5d, 0xa1, 0x4c, 0x4f, 0x34, 0xe6, 0x8b, 0x08, 0x7b, 0xaf, 0xb6, 0x33, 0x59,
+	0x1e, 0x67, 0x3a, 0xc6, 0x6e, 0x1f, 0xde, 0xb2, 0x6a, 0x18, 0xd5, 0x05, 0x30, 0x4a, 0x82, 0xa3,
+	0x35, 0x44, 0x88, 0x5b, 0x54, 0xc9, 0xfa, 0x40, 0xe7, 0xcb, 0x0c, 0xab, 0x73, 0x94, 0x8f, 0xae,
+	0x6b, 0xd9, 0x0c, 0x0e, 0xff, 0xb2, 0x6b, 0x60, 0x64, 0x07, 0xb7, 0x5d, 0xa0, 0xfa, 0x1e, 0xfb,
+	0xb1, 0x15, 0x3a, 0x9b, 0xfa, 0x80, 0x9e, 0x7e, 0xb5, 0x92, 0x7a, 0x8e, 0xab, 0x16, 0x03, 0x29,
+	0x39, 0x10, 0xf4, 0x14, 0x6c, 0x25, 0xf5, 0x6c, 0xab, 0x16, 0xb7, 0x87, 0x4f, 0x22, 0x35, 0xfd,
+	0x22, 0x62, 0xd5, 0xd7, 0x7f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x40, 0xc0, 0x03, 0x13, 0x7f, 0x01,
+	0x00, 0x00,
 }

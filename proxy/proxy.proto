@@ -3,26 +3,31 @@ syntax = "proto3";
 option go_package = "/proxy";
 
 service proxy {
-  rpc Status(ProxyStatusReq) returns (ProxyStatusResp) {}
-  rpc Update(ProxyUpdateReq) returns (ProxyUpdateResp) {}
+  rpc Status(StatusReq) returns (StatusResp) {}
+  rpc Update(UpdateReq) returns (UpdateResp) {}
 }
 
-message ProxyStatusReq {
-  string msg = 1;
-}
-
-message ProxyStatusResp {
+message Status {
   uint32 listen_port = 1;
   string remote = 2;
 }
 
-
-message ProxyUpdateReq {
-  uint32 listen_port = 1;
-  string remote = 2;
+message StatusReq {
+  uint32 code = 1;
+  string msg = 2;
 }
 
-message ProxyUpdateResp {
-  string msg = 1;
+message StatusResp {
+  Status status = 1;
+}
+
+
+message UpdateReq {
+  Status status = 1;
+}
+
+message UpdateResp {
+  uint32 code = 1;
+  string msg = 2;
 }
 

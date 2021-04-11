@@ -18,8 +18,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ProxyClient interface {
-	Status(ctx context.Context, in *ProxyStatusReq, opts ...grpc.CallOption) (*ProxyStatusResp, error)
-	Update(ctx context.Context, in *ProxyUpdateReq, opts ...grpc.CallOption) (*ProxyUpdateResp, error)
+	Status(ctx context.Context, in *StatusReq, opts ...grpc.CallOption) (*StatusResp, error)
+	Update(ctx context.Context, in *UpdateReq, opts ...grpc.CallOption) (*UpdateResp, error)
 }
 
 type proxyClient struct {
@@ -30,8 +30,8 @@ func NewProxyClient(cc grpc.ClientConnInterface) ProxyClient {
 	return &proxyClient{cc}
 }
 
-func (c *proxyClient) Status(ctx context.Context, in *ProxyStatusReq, opts ...grpc.CallOption) (*ProxyStatusResp, error) {
-	out := new(ProxyStatusResp)
+func (c *proxyClient) Status(ctx context.Context, in *StatusReq, opts ...grpc.CallOption) (*StatusResp, error) {
+	out := new(StatusResp)
 	err := c.cc.Invoke(ctx, "/proxy/Status", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -39,8 +39,8 @@ func (c *proxyClient) Status(ctx context.Context, in *ProxyStatusReq, opts ...gr
 	return out, nil
 }
 
-func (c *proxyClient) Update(ctx context.Context, in *ProxyUpdateReq, opts ...grpc.CallOption) (*ProxyUpdateResp, error) {
-	out := new(ProxyUpdateResp)
+func (c *proxyClient) Update(ctx context.Context, in *UpdateReq, opts ...grpc.CallOption) (*UpdateResp, error) {
+	out := new(UpdateResp)
 	err := c.cc.Invoke(ctx, "/proxy/Update", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -52,8 +52,8 @@ func (c *proxyClient) Update(ctx context.Context, in *ProxyUpdateReq, opts ...gr
 // All implementations must embed UnimplementedProxyServer
 // for forward compatibility
 type ProxyServer interface {
-	Status(context.Context, *ProxyStatusReq) (*ProxyStatusResp, error)
-	Update(context.Context, *ProxyUpdateReq) (*ProxyUpdateResp, error)
+	Status(context.Context, *StatusReq) (*StatusResp, error)
+	Update(context.Context, *UpdateReq) (*UpdateResp, error)
 	mustEmbedUnimplementedProxyServer()
 }
 
@@ -61,10 +61,10 @@ type ProxyServer interface {
 type UnimplementedProxyServer struct {
 }
 
-func (UnimplementedProxyServer) Status(context.Context, *ProxyStatusReq) (*ProxyStatusResp, error) {
+func (UnimplementedProxyServer) Status(context.Context, *StatusReq) (*StatusResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Status not implemented")
 }
-func (UnimplementedProxyServer) Update(context.Context, *ProxyUpdateReq) (*ProxyUpdateResp, error) {
+func (UnimplementedProxyServer) Update(context.Context, *UpdateReq) (*UpdateResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
 func (UnimplementedProxyServer) mustEmbedUnimplementedProxyServer() {}
@@ -81,7 +81,7 @@ func RegisterProxyServer(s grpc.ServiceRegistrar, srv ProxyServer) {
 }
 
 func _Proxy_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ProxyStatusReq)
+	in := new(StatusReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -93,13 +93,13 @@ func _Proxy_Status_Handler(srv interface{}, ctx context.Context, dec func(interf
 		FullMethod: "/proxy/Status",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProxyServer).Status(ctx, req.(*ProxyStatusReq))
+		return srv.(ProxyServer).Status(ctx, req.(*StatusReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Proxy_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ProxyUpdateReq)
+	in := new(UpdateReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func _Proxy_Update_Handler(srv interface{}, ctx context.Context, dec func(interf
 		FullMethod: "/proxy/Update",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProxyServer).Update(ctx, req.(*ProxyUpdateReq))
+		return srv.(ProxyServer).Update(ctx, req.(*UpdateReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }

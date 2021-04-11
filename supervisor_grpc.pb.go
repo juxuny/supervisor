@@ -3,6 +3,7 @@
 package supervisor
 
 import (
+	proxy "/proxy"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -18,6 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SupervisorClient interface {
+	ProxyStatus(ctx context.Context, in *proxy.StatusReq, opts ...grpc.CallOption) (*proxy.StatusResp, error)
 	Apply(ctx context.Context, in *ApplyReq, opts ...grpc.CallOption) (*ApplyResp, error)
 }
 
@@ -27,6 +29,15 @@ type supervisorClient struct {
 
 func NewSupervisorClient(cc grpc.ClientConnInterface) SupervisorClient {
 	return &supervisorClient{cc}
+}
+
+func (c *supervisorClient) ProxyStatus(ctx context.Context, in *proxy.StatusReq, opts ...grpc.CallOption) (*proxy.StatusResp, error) {
+	out := new(proxy.StatusResp)
+	err := c.cc.Invoke(ctx, "/Supervisor/ProxyStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *supervisorClient) Apply(ctx context.Context, in *ApplyReq, opts ...grpc.CallOption) (*ApplyResp, error) {
@@ -42,6 +53,7 @@ func (c *supervisorClient) Apply(ctx context.Context, in *ApplyReq, opts ...grpc
 // All implementations must embed UnimplementedSupervisorServer
 // for forward compatibility
 type SupervisorServer interface {
+	ProxyStatus(context.Context, *proxy.StatusReq) (*proxy.StatusResp, error)
 	Apply(context.Context, *ApplyReq) (*ApplyResp, error)
 	mustEmbedUnimplementedSupervisorServer()
 }
@@ -50,6 +62,9 @@ type SupervisorServer interface {
 type UnimplementedSupervisorServer struct {
 }
 
+func (UnimplementedSupervisorServer) ProxyStatus(context.Context, *proxy.StatusReq) (*proxy.StatusResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProxyStatus not implemented")
+}
 func (UnimplementedSupervisorServer) Apply(context.Context, *ApplyReq) (*ApplyResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Apply not implemented")
 }
@@ -64,6 +79,24 @@ type UnsafeSupervisorServer interface {
 
 func RegisterSupervisorServer(s grpc.ServiceRegistrar, srv SupervisorServer) {
 	s.RegisterService(&Supervisor_ServiceDesc, srv)
+}
+
+func _Supervisor_ProxyStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proxy.StatusReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupervisorServer).ProxyStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Supervisor/ProxyStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupervisorServer).ProxyStatus(ctx, req.(*proxy.StatusReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Supervisor_Apply_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -91,6 +124,10 @@ var Supervisor_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "Supervisor",
 	HandlerType: (*SupervisorServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ProxyStatus",
+			Handler:    _Supervisor_ProxyStatus_Handler,
+		},
 		{
 			MethodName: "Apply",
 			Handler:    _Supervisor_Apply_Handler,

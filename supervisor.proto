@@ -2,7 +2,10 @@ syntax = "proto3";
 
 option go_package = "/supervisor";
 
+import 'proxy/proxy.proto';
+
 service Supervisor {
+  rpc ProxyStatus(StatusReq) returns (StatusResp) {}
   rpc Apply(ApplyReq) returns (ApplyResp) {}
 }
 
