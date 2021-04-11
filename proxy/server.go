@@ -10,8 +10,9 @@ import (
 )
 
 type IServer interface {
-	Start() error
+	Start()
 	UpdateRemote(remote string) error
+	Status() (*Status, error)
 }
 
 type Server struct {
@@ -26,7 +27,7 @@ func NewServer(proxy Proxy) IServer {
 	return s
 }
 
-func (t *Server) Start() error {
+func (t *Server) Start() {
 	for {
 		func() {
 			defer func() {
@@ -42,6 +43,9 @@ func (t *Server) Start() error {
 }
 
 func (t *Server) UpdateRemote(remote string) error {
+	t.Lock()
+	defer t.Unlock()
+	t.proxy.Remote = remote
 	return nil
 }
 
@@ -85,4 +89,11 @@ func (t *Server) serveClient(conn net.Conn) {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func (t *Server) Status() (ret *Status, err error) {
+	ret = &Status{}
+	ret.ListenPort = t.proxy.ListenPort
+	ret.Remote = t.proxy.Remote
+	return
 }

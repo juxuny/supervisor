@@ -1,11 +1,13 @@
 syntax = "proto3";
 
-option go_package = "/supervisor";
+option go_package = "github.com/juxuny/supervisor";
+
+package supervisor;
 
 import 'proxy/proxy.proto';
 
 service Supervisor {
-  rpc ProxyStatus(StatusReq) returns (StatusResp) {}
+  rpc ProxyStatus(proxy.StatusReq) returns (proxy.StatusResp) {}
   rpc Apply(ApplyReq) returns (ApplyResp) {}
 }
 

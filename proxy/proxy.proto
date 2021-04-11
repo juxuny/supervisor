@@ -1,6 +1,8 @@
 syntax = "proto3";
 
-option go_package = "/proxy";
+option go_package = "github.com/juxuny/supervisor/proxy";
+
+package proxy;
 
 service proxy {
   rpc Status(StatusReq) returns (StatusResp) {}
@@ -13,8 +15,6 @@ message Status {
 }
 
 message StatusReq {
-  uint32 code = 1;
-  string msg = 2;
 }
 
 message StatusResp {
@@ -27,7 +27,6 @@ message UpdateReq {
 }
 
 message UpdateResp {
-  uint32 code = 1;
-  string msg = 2;
+  Status status = 1;
 }
 

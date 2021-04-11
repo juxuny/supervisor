@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	pb "github.com/juxuny/supervisor/proxy"
+	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -15,15 +16,31 @@ type server struct {
 }
 
 func (s *server) Status(ctx context.Context, in *pb.StatusReq) (*pb.StatusResp, error) {
-	return &pb.StatusResp{}, nil
+	var resp pb.StatusResp
+	currentStatus, _ := proxyServer.Status()
+	resp.Status = &pb.Status{
+		ListenPort: currentStatus.ListenPort,
+		Remote:     currentStatus.Remote,
+	}
+	return &resp, nil
 }
 
 func (s *server) Update(ctx context.Context, in *pb.UpdateReq) (*pb.UpdateResp, error) {
-	return &pb.UpdateResp{}, nil
+	var resp pb.UpdateResp
+	if err := proxyServer.UpdateRemote(in.Status.Remote); err != nil {
+		return nil, errors.Wrap(err, "update failed")
+	}
+	currentStatus, _ := proxyServer.Status()
+	resp.Status = &pb.Status{
+		ListenPort: currentStatus.ListenPort,
+		Remote:     currentStatus.Remote,
+	}
+	return &resp, nil
 }
 
 var (
-	configFile string
+	configFile  string
+	proxyServer pb.IServer
 )
 
 func main() {
@@ -34,9 +51,11 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	proxyServer := pb.NewServer(proxyConfig.Proxy)
-	proxyServer.Start()
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", int(proxyConfig.Proxy.ControlPort)))
+	proxyServer = pb.NewServer(proxyConfig.Proxy)
+	go proxyServer.Start()
+	addr := fmt.Sprintf(":%d", int(proxyConfig.Proxy.ControlPort))
+	fmt.Println("listen ", addr)
+	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
