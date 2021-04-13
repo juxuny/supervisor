@@ -1,6 +1,7 @@
 package supervisor
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -11,8 +12,9 @@ type ConfigWrapper struct {
 }
 
 type Config struct {
-	ControlPort int    `json:"control_port" yaml:"control_port"`
-	Docker      string `json:"docker" yaml:"docker"`
+	ProxyControlPort int    `json:"proxy_control_port" yaml:"proxy_control_port"`
+	ControlPort      int    `json:"control_port" yaml:"control_port"`
+	Docker           string `json:"docker" yaml:"docker"`
 }
 
 func Parse(file string) (*ConfigWrapper, error) {
@@ -27,4 +29,8 @@ func Parse(file string) (*ConfigWrapper, error) {
 
 func (t *Config) GetDockerClientConfig() *DockerClientConfig {
 	return &DockerClientConfig{Host: t.Docker}
+}
+
+func (t *Config) GetProxyControlHost() string {
+	return fmt.Sprintf("127.0.0.1:%d", t.ProxyControlPort)
 }

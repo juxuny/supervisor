@@ -9,6 +9,7 @@ import 'proxy/proxy.proto';
 service Supervisor {
   rpc ProxyStatus(proxy.StatusReq) returns (proxy.StatusResp) {}
   rpc Apply(ApplyReq) returns (ApplyResp) {}
+  rpc Get(GetReq) returns (GetResp) {}
 }
 
 message ApplyReq {
@@ -38,4 +39,12 @@ message Mount {
 message KeyValue {
   string key = 1;
   string values = 2;
+}
+
+message GetReq {
+  string name = 1;
+}
+
+message GetResp {
+  repeated DeployConfig config = 1;
 }

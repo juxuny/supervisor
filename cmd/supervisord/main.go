@@ -11,12 +11,9 @@ import (
 )
 
 var (
-	configFile string
+	configFile   string
+	globalConfig supervisor.Config
 )
-
-type server struct {
-	supervisor.UnimplementedSupervisorServer
-}
 
 func main() {
 	flag.StringVar(&configFile, "c", "supervisor.yaml", "config file")
@@ -26,6 +23,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(-1)
 	}
+	globalConfig = config.Supervisor
 	addr := fmt.Sprintf(":%d", config.Supervisor.ControlPort)
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
