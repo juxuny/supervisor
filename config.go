@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"os"
 )
 
 type ConfigWrapper struct {
@@ -12,9 +13,10 @@ type ConfigWrapper struct {
 }
 
 type Config struct {
-	ProxyControlPort int    `json:"proxy_control_port" yaml:"proxy_control_port"`
-	ControlPort      int    `json:"control_port" yaml:"control_port"`
-	Docker           string `json:"docker" yaml:"docker"`
+	ProxyImage  string `json:"proxy_image" yaml:"proxy_image"`
+	ControlPort int    `json:"control_port" yaml:"control_port"`
+	DockerHost  string `json:"docker_host" yaml:"docker_host"`
+	StoreDir    string `json:"store_dir" yaml:"store_dir"`
 }
 
 func Parse(file string) (*ConfigWrapper, error) {
@@ -28,9 +30,19 @@ func Parse(file string) (*ConfigWrapper, error) {
 }
 
 func (t *Config) GetDockerClientConfig() *DockerClientConfig {
-	return &DockerClientConfig{Host: t.Docker}
+	return &DockerClientConfig{Host: t.DockerHost}
 }
 
-func (t *Config) GetProxyControlHost() string {
-	return fmt.Sprintf("127.0.0.1:%d", t.ProxyControlPort)
+func Init(config Config) error {
+	if config.StoreDir == "" {
+		return fmt.Errorf("store dir cannot be empty")
+	}
+	if stat, err := os.Stat(config.StoreDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(config.StoreDir, 0666); err != nil {
+			return err
+		}
+	} else if !stat.IsDir() {
+		return fmt.Errorf("%s is not a direcory", config.StoreDir)
+	}
+	return nil
 }

@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	DefaultTimeout = time.Second * 15
+	DefaultTimeout    = time.Second * 15
+	DefaultProxyImage = "juxuny/supervisor-proxy:latest"
 )
 
 var (
@@ -23,11 +24,15 @@ var (
 )
 
 type DockerClientConfig struct {
-	Host string
+	Host       string
+	ProxyImage string
 }
 
 func NewDefaultDockerConfig() DockerClientConfig {
-	return DockerClientConfig{Host: "unix:///var/run/docker.sock"}
+	return DockerClientConfig{
+		Host:       "unix:///var/run/docker.sock",
+		ProxyImage: DefaultProxyImage,
+	}
 }
 
 type DockerClient struct {
@@ -76,6 +81,34 @@ func (t *DockerClient) findImage(ctx context.Context, imageWithTag string) (ret 
 	return ret, NotFound
 }
 
+func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig) error {
+	proxyContainerName := strings.Join([]string{containerPrefix, "proxy", deployConfig.Name}, "-")
+	list, err := t.ContainerList(ctx, types.ContainerListOptions{})
+	if err != nil {
+		return errors.Wrap(err, "find proxy container failed")
+	}
+	for _, item := range list {
+		for _, n := range item.Names {
+			if n == proxyContainerName {
+				// proxy instance is started
+				return nil
+			}
+		}
+	}
+	resp, err := t.ContainerCreate(ctx, &container.Config{
+		Image: t.Config.ProxyImage,
+	}, &container.HostConfig{
+		AutoRemove: true,
+	}, nil, nil, proxyContainerName)
+	if err != nil {
+		return errors.Wrap(err, "create proxy container failed")
+	}
+	if err := t.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		return errors.Wrap(err, "start proxy container failed")
+	}
+	return nil
+}
+
 func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id string, err error) {
 	imageWithTag := deployConfig.Image + ":" + deployConfig.Tag
 	if deployConfig.PullRetryTimes <= 0 {
@@ -96,8 +129,11 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 		}
 		fmt.Println("retry:", i+1)
 	}
+	if err := t.initProxy(ctx, deployConfig); err != nil {
+		return "", err
+	}
 
-	containerName := strings.Join([]string{containerPrefix, deployConfig.Name}, "-")
+	containerName := strings.Join([]string{containerPrefix, "svc", deployConfig.Name}, "-")
 	resp, err := t.ContainerCreate(ctx, &container.Config{
 		Image: imageWithTag,
 	}, &container.HostConfig{

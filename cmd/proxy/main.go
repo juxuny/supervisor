@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/juxuny/supervisor/env"
 	pb "github.com/juxuny/supervisor/proxy"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
@@ -40,16 +41,28 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateReq) (*pb.UpdateResp, 
 
 var (
 	configFile  string
+	fromEnv     bool
 	proxyServer pb.IServer
 )
 
 func main() {
 	flag.StringVar(&configFile, "c", "config/proxy.yaml", "proxy config yaml")
+	flag.BoolVar(&fromEnv, "e", false, "use config from environment variable")
 	flag.Parse()
-	proxyConfig, err := pb.Parse(configFile)
-	if err != nil {
-		fmt.Println(err)
-		return
+	var err error
+	var proxyConfig *pb.Config
+	if fromEnv {
+		proxyConfig = &pb.Config{Proxy: pb.Proxy{
+			ControlPort: uint32(env.GetInt("CONTROL_PORT", 50050)),
+			ListenPort:  uint32(env.GetInt("LISTEN_PORT", 8888)),
+			Remote:      env.GetString("REMOTE", "127.0.0.1:8080"),
+		}}
+	} else {
+		proxyConfig, err = pb.Parse(configFile)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 	proxyServer = pb.NewServer(proxyConfig.Proxy)
 	go proxyServer.Start()

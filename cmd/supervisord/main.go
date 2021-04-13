@@ -24,6 +24,10 @@ func main() {
 		os.Exit(-1)
 	}
 	globalConfig = config.Supervisor
+	if err := supervisor.Init(globalConfig); err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
 	addr := fmt.Sprintf(":%d", config.Supervisor.ControlPort)
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
