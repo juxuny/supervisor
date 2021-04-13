@@ -29,6 +29,7 @@ message DeployConfig {
   repeated Mount mounts = 5;
   string env_data = 6;
   repeated KeyValue envs = 7;
+  uint32 pull_retry_times = 8;
 }
 
 message Mount {
