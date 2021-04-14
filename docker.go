@@ -6,6 +6,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 	"github.com/pkg/errors"
 	"io"
 	"os"
@@ -83,12 +84,49 @@ func (t *DockerClient) findImage(ctx context.Context, imageWithTag string) (ret 
 	return ret, NotFound
 }
 
-func (t *DockerClient) initNetwork(ctx context.Context, deployConfig DeployConfig) error {
-	return nil
+func (t *DockerClient) findNetwork(ctx context.Context, filter func(item types.NetworkResource) bool) (ret types.NetworkResource, found bool, err error) {
+	list, err := t.NetworkList(ctx, types.NetworkListOptions{})
+	if err != nil {
+		return ret, false, err
+	}
+	for _, item := range list {
+		if filter(item) {
+			return item, true, nil
+		}
+	}
+	return ret, false, nil
 }
 
-func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig) error {
-	proxyContainerName := strings.Join([]string{containerPrefix, "proxy", deployConfig.Name}, "-")
+func (t *DockerClient) initNetwork(ctx context.Context, deployConfig DeployConfig) (id string, err error) {
+	networkName := strings.Join([]string{containerPrefix, "network", deployConfig.Name}, "-")
+	fmt.Println("init network:", networkName)
+	res, found, err := t.findNetwork(ctx, func(item types.NetworkResource) bool {
+		return item.Name == networkName
+	})
+	if err != nil {
+		return "", err
+	}
+	if found {
+		return res.ID, nil
+	}
+	fmt.Println(res.ID)
+	resp, err := t.NetworkCreate(ctx, networkName, types.NetworkCreate{
+		CheckDuplicate: true,
+		Driver:         "",
+		Scope:          "",
+		IPAM:           nil,
+		Internal:       false,
+		Attachable:     false,
+		Labels:         nil,
+	})
+	if err != nil {
+		return id, err
+	}
+	return resp.ID, nil
+}
+
+func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig, callback func(c container.ContainerCreateCreatedBody) error) (ID string, err error) {
+	proxyContainerName := t.genProxyName(deployConfig)
 	// check running container
 	if list, err := t.findContainer(ctx, func(container types.Container) bool {
 		for _, n := range container.Names {
@@ -98,22 +136,33 @@ func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig)
 		}
 		return false
 	}); err != nil {
-		return err
+		return "", err
 	} else if len(list) > 0 {
-		return nil
+		return list[0].ID, nil
 	}
 	resp, err := t.ContainerCreate(ctx, &container.Config{
 		Image: t.Config.ProxyImage,
+		ExposedPorts: nat.PortSet{
+			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)): struct{}{},
+		},
 	}, &container.HostConfig{
 		AutoRemove: true,
+		PortBindings: nat.PortMap{
+			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)): []nat.PortBinding{
+				{HostPort: fmt.Sprintf("%d", deployConfig.ServicePort)},
+			},
+		},
 	}, nil, nil, proxyContainerName)
 	if err != nil {
-		return errors.Wrap(err, "create proxy container failed")
+		return "", errors.Wrap(err, "create proxy container failed")
 	}
 	if err := t.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		return errors.Wrap(err, "start proxy container failed")
+		return "", errors.Wrap(err, "start proxy container failed")
 	}
-	return nil
+	if err := callback(resp); err != nil {
+		return resp.ID, err
+	}
+	return resp.ID, nil
 }
 
 func (t *DockerClient) findContainer(ctx context.Context, filter func(container types.Container) bool) ([]types.Container, error) {
@@ -130,10 +179,22 @@ func (t *DockerClient) findContainer(ctx context.Context, filter func(container 
 	return ret, nil
 }
 
+func (t *DockerClient) genProxyName(deployConfig DeployConfig) string {
+	return strings.Join([]string{containerPrefix, ComponentProxy, deployConfig.Name}, "-")
+}
+
+func (t *DockerClient) genSvcName(deployConfig DeployConfig) string {
+	return strings.Join([]string{containerPrefix, ComponentSvc, deployConfig.Name}, "-")
+}
+
 func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id string, err error) {
 	imageWithTag := deployConfig.Image + ":" + deployConfig.Tag
 	if deployConfig.PullRetryTimes <= 0 {
 		deployConfig.PullRetryTimes = 3
+	}
+	networkID, err := t.initNetwork(ctx, deployConfig)
+	if err != nil {
+		return id, err
 	}
 	fmt.Println("pulling image:", imageWithTag)
 	for i := 0; i < int(deployConfig.PullRetryTimes); i++ {
@@ -151,12 +212,14 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 		}
 		fmt.Println("retry:", i+1)
 	}
-	if err := t.initProxy(ctx, deployConfig); err != nil {
+	_, err = t.initProxy(ctx, deployConfig, func(c container.ContainerCreateCreatedBody) error {
+		return t.NetworkConnect(ctx, networkID, c.ID, nil)
+	})
+	if err != nil {
 		return "", err
 	}
 
-	containerName := strings.Join([]string{containerPrefix, "svc", deployConfig.Name}, "-")
-
+	containerName := t.genSvcName(deployConfig)
 	// check running container
 	if list, err := t.findContainer(ctx, func(container types.Container) bool {
 		for _, n := range container.Names {
@@ -181,6 +244,9 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 	}
 	if err := t.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		return "", errors.Wrap(err, "start container failed")
+	}
+	if err := t.NetworkConnect(ctx, networkID, resp.ID, nil); err != nil {
+		return resp.ID, err
 	}
 	//config := container.Config{
 	//	Hostname:        strings.Join([]string{containerPrefix, deployConfig.Name}, "-"),
