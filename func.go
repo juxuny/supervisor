@@ -3,6 +3,9 @@ package supervisor
 import (
 	"crypto/sha256"
 	"fmt"
+	pb "github.com/juxuny/supervisor/proxy"
+	"github.com/pkg/errors"
+	"google.golang.org/grpc"
 	"reflect"
 	"strings"
 )
@@ -33,4 +36,13 @@ func HashShort(v interface{}) string {
 		return h[:10]
 	}
 	return h
+}
+
+func createProxyControlClient(host string) (client pb.ProxyClient, err error) {
+	conn, err := grpc.Dial(host, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		return nil, errors.Wrap(err, "connect failed")
+	}
+	client = pb.NewProxyClient(conn)
+	return client, nil
 }

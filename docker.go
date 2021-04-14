@@ -7,6 +7,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"github.com/juxuny/supervisor/proxy"
 	"github.com/pkg/errors"
 	"io"
 	"os"
@@ -19,6 +20,7 @@ const (
 	DefaultProxyImage = "juxuny/supervisor-proxy:latest"
 	ComponentProxy    = "proxy"
 	ComponentSvc      = "svc"
+	ControlPortOffset = 100
 )
 
 var (
@@ -129,7 +131,7 @@ func (t *DockerClient) createProxyEnv(deployConfig DeployConfig) []string {
 	svcContainerName := t.genSvcName(deployConfig)
 	return []string{
 		"REMOTE=" + svcContainerName + fmt.Sprintf(":%d", deployConfig.ServicePort),
-		"CONTROL_PORT=" + fmt.Sprintf("%d", deployConfig.ServicePort+1),
+		"CONTROL_PORT=" + fmt.Sprintf("%d", deployConfig.ServicePort+ControlPortOffset),
 		"LISTEN_PORT=" + fmt.Sprintf("%d", deployConfig.ServicePort),
 	}
 }
@@ -154,8 +156,8 @@ func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig,
 		Domainname: proxyContainerName,
 		Image:      t.Config.ProxyImage,
 		ExposedPorts: nat.PortSet{
-			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)):   struct{}{},
-			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort+1)): struct{}{},
+			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)):                   struct{}{},
+			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort+ControlPortOffset)): struct{}{},
 		},
 		Env: t.createProxyEnv(deployConfig),
 	}, &container.HostConfig{
@@ -164,8 +166,8 @@ func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig,
 			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)): []nat.PortBinding{
 				{HostPort: fmt.Sprintf("%d", deployConfig.ServicePort)},
 			},
-			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort+1)): []nat.PortBinding{
-				{HostPort: fmt.Sprintf("%d", deployConfig.ServicePort+1)},
+			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort+ControlPortOffset)): []nat.PortBinding{
+				{HostPort: fmt.Sprintf("%d", deployConfig.ServicePort+ControlPortOffset)},
 			},
 		},
 	}, nil, nil, proxyContainerName)
@@ -269,78 +271,20 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 	if err := t.NetworkConnect(ctx, networkID, resp.ID, nil); err != nil {
 		return resp.ID, err
 	}
-	//config := container.Config{
-	//	Hostname:        strings.Join([]string{containerPrefix, deployConfig.Name}, "-"),
-	//	Domainname:      strings.Join([]string{containerPrefix, deployConfig.Name}, "-"),
-	//	User:            "root",
-	//	AttachStdin:     false,
-	//	AttachStdout:    false,
-	//	AttachStderr:    false,
-	//	ExposedPorts:    nil,
-	//	Tty:             false,
-	//	OpenStdin:       false,
-	//	StdinOnce:       false,
-	//	Env:             nil,
-	//	Cmd:             nil,
-	//	Healthcheck:     nil,
-	//	ArgsEscaped:     false,
-	//	Image:           deployConfig.Image + ":" + deployConfig.Tag,
-	//	Volumes:         nil,
-	//	WorkingDir:      "",
-	//	Entrypoint:      nil,
-	//	NetworkDisabled: false,
-	//	MacAddress:      "",
-	//	OnBuild:         nil,
-	//	Labels:          nil,
-	//	StopSignal:      "",
-	//	StopTimeout:     nil,
-	//	Shell:           nil,
-	//}
-	//hostConfig := container.HostConfig{
-	//	Binds:           nil,
-	//	ContainerIDFile: "",
-	//	LogConfig:       container.LogConfig{},
-	//	NetworkMode:     "",
-	//	PortBindings:    nil,
-	//	RestartPolicy:   container.RestartPolicy{},
-	//	AutoRemove:      false,
-	//	VolumeDriver:    "",
-	//	VolumesFrom:     nil,
-	//	CapAdd:          nil,
-	//	CapDrop:         nil,
-	//	CgroupnsMode:    "",
-	//	DNS:             nil,
-	//	DNSOptions:      nil,
-	//	DNSSearch:       nil,
-	//	ExtraHosts:      nil,
-	//	GroupAdd:        nil,
-	//	IpcMode:         "",
-	//	Cgroup:          "",
-	//	Links:           nil,
-	//	OomScoreAdj:     0,
-	//	PidMode:         "",
-	//	Privileged:      false,
-	//	PublishAllPorts: false,
-	//	ReadonlyRootfs:  false,
-	//	SecurityOpt:     nil,
-	//	StorageOpt:      nil,
-	//	Tmpfs:           nil,
-	//	UTSMode:         "",
-	//	UsernsMode:      "",
-	//	ShmSize:         0,
-	//	Sysctls:         nil,
-	//	Runtime:         "",
-	//	ConsoleSize:     [2]uint{},
-	//	Isolation:       "",
-	//	Resources:       container.Resources{},
-	//	Mounts:          nil,
-	//	MaskedPaths:     nil,
-	//	ReadonlyPaths:   nil,
-	//	Init:            nil,
-	//}
-	//nc := network.NetworkingConfig{}
-	//t.ContainerCreate(ctx, &config, &hostConfig, &nc, nil, strings.Join([]string{containerPrefix, deployConfig.Name}, "-"))
-	return
+
+	proxyClient, err := createProxyControlClient(fmt.Sprintf("127.0.0.1:%d", deployConfig.ServicePort+ControlPortOffset))
+	if err != nil {
+		return "", err
+	}
+	_, err = proxyClient.Update(ctx, &proxy.UpdateReq{
+		Status: &proxy.Status{
+			Remote: fmt.Sprintf("%s:%d", containerName, deployConfig.ServicePort),
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+	return resp.ID, nil
 }
 
 func (t *DockerClient) Stop(ctx context.Context, name string) (int, error) {
