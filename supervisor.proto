@@ -39,7 +39,7 @@ message Mount {
 
 message KeyValue {
   string key = 1;
-  string values = 2;
+  string value = 2;
 }
 
 message GetReq {

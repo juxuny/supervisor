@@ -186,7 +186,7 @@ func (t *DockerClient) genProxyName(deployConfig DeployConfig) string {
 }
 
 func (t *DockerClient) genSvcName(deployConfig DeployConfig) string {
-	return strings.Join([]string{containerPrefix, ComponentSvc, deployConfig.Name}, "-")
+	return strings.Join([]string{containerPrefix, ComponentSvc, deployConfig.Name, HashShort(deployConfig)}, "-")
 }
 
 func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id string, err error) {
