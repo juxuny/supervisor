@@ -125,6 +125,15 @@ func (t *DockerClient) initNetwork(ctx context.Context, deployConfig DeployConfi
 	return resp.ID, nil
 }
 
+func (t *DockerClient) createProxyEnv(deployConfig DeployConfig) []string {
+	svcContainerName := t.genSvcName(deployConfig)
+	return []string{
+		"REMOTE=" + svcContainerName + fmt.Sprintf(":%d", deployConfig.ServicePort),
+		"CONTROL_PORT=" + fmt.Sprintf("%d", deployConfig.ServicePort+1),
+		"LISTEN_PORT=" + fmt.Sprintf("%d", deployConfig.ServicePort),
+	}
+}
+
 func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig, callback func(c container.ContainerCreateCreatedBody) error) (ID string, err error) {
 	proxyContainerName := t.genProxyName(deployConfig)
 	// check running container
@@ -145,13 +154,18 @@ func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig,
 		Domainname: proxyContainerName,
 		Image:      t.Config.ProxyImage,
 		ExposedPorts: nat.PortSet{
-			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)): struct{}{},
+			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)):   struct{}{},
+			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort+1)): struct{}{},
 		},
+		Env: t.createProxyEnv(deployConfig),
 	}, &container.HostConfig{
 		AutoRemove: true,
 		PortBindings: nat.PortMap{
 			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)): []nat.PortBinding{
 				{HostPort: fmt.Sprintf("%d", deployConfig.ServicePort)},
+			},
+			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort+1)): []nat.PortBinding{
+				{HostPort: fmt.Sprintf("%d", deployConfig.ServicePort+1)},
 			},
 		},
 	}, nil, nil, proxyContainerName)
@@ -240,6 +254,9 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 		Hostname:   containerName,
 		Domainname: containerName,
 		Image:      imageWithTag,
+		ExposedPorts: nat.PortSet{
+			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)): struct{}{},
+		},
 	}, &container.HostConfig{
 		AutoRemove: true,
 	}, nil, nil, containerName)

@@ -29,6 +29,11 @@ func TestDockerClient_Apply(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
+	if num, err := c.Stop(ctx, "web"); err != nil {
+		t.Fatal(err)
+	} else {
+		t.Log("stop containers:", num)
+	}
 	id, err := c.Apply(ctx, DeployConfig{
 		ServicePort: 8080,
 		Name:        "web",
