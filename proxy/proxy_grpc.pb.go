@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 type ProxyClient interface {
 	Status(ctx context.Context, in *StatusReq, opts ...grpc.CallOption) (*StatusResp, error)
 	Update(ctx context.Context, in *UpdateReq, opts ...grpc.CallOption) (*UpdateResp, error)
+	Check(ctx context.Context, in *CheckReq, opts ...grpc.CallOption) (*CheckResp, error)
 }
 
 type proxyClient struct {
@@ -48,12 +49,22 @@ func (c *proxyClient) Update(ctx context.Context, in *UpdateReq, opts ...grpc.Ca
 	return out, nil
 }
 
+func (c *proxyClient) Check(ctx context.Context, in *CheckReq, opts ...grpc.CallOption) (*CheckResp, error) {
+	out := new(CheckResp)
+	err := c.cc.Invoke(ctx, "/proxy.proxy/Check", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProxyServer is the server API for Proxy service.
 // All implementations must embed UnimplementedProxyServer
 // for forward compatibility
 type ProxyServer interface {
 	Status(context.Context, *StatusReq) (*StatusResp, error)
 	Update(context.Context, *UpdateReq) (*UpdateResp, error)
+	Check(context.Context, *CheckReq) (*CheckResp, error)
 	mustEmbedUnimplementedProxyServer()
 }
 
@@ -66,6 +77,9 @@ func (UnimplementedProxyServer) Status(context.Context, *StatusReq) (*StatusResp
 }
 func (UnimplementedProxyServer) Update(context.Context, *UpdateReq) (*UpdateResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
+}
+func (UnimplementedProxyServer) Check(context.Context, *CheckReq) (*CheckResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Check not implemented")
 }
 func (UnimplementedProxyServer) mustEmbedUnimplementedProxyServer() {}
 
@@ -116,6 +130,24 @@ func _Proxy_Update_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Proxy_Check_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProxyServer).Check(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proxy.proxy/Check",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProxyServer).Check(ctx, req.(*CheckReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Proxy_ServiceDesc is the grpc.ServiceDesc for Proxy service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -130,6 +162,10 @@ var Proxy_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Update",
 			Handler:    _Proxy_Update_Handler,
+		},
+		{
+			MethodName: "Check",
+			Handler:    _Proxy_Check_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

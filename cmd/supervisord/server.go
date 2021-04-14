@@ -22,11 +22,7 @@ func getProxyClient(host string) (client proxy.ProxyClient, err error) {
 }
 
 func (t *server) ProxyStatus(ctx context.Context, req *proxy.StatusReq) (resp *proxy.StatusResp, err error) {
-	client, err := getProxyClient(globalConfig.GetProxyControlHost())
-	if err != nil {
-		return nil, errors.Wrap(err, "connected to proxy service failed")
-	}
-	return client.Status(ctx, &proxy.StatusReq{})
+	return resp, nil
 }
 func (t *server) Apply(ctx context.Context, req *supervisor.ApplyReq) (resp *supervisor.ApplyResp, err error) {
 	return

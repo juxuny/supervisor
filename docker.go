@@ -24,9 +24,16 @@ const (
 )
 
 var (
-	NotFound        = errors.New("not found")
-	containerPrefix = "sup"
+	ErrNotFound           = errors.New("not found")
+	ErrHealthCheckTimeout = errors.New("health check timeout")
+	containerPrefix       = "sup"
+	DefaultTimeoutPointer *time.Duration
 )
+
+func init() {
+	tmp := DefaultTimeout
+	DefaultTimeoutPointer = &tmp
+}
 
 type DockerClientConfig struct {
 	Host       string
@@ -83,7 +90,7 @@ func (t *DockerClient) findImage(ctx context.Context, imageWithTag string) (ret 
 			}
 		}
 	}
-	return ret, NotFound
+	return ret, ErrNotFound
 }
 
 func (t *DockerClient) findNetwork(ctx context.Context, filter func(item types.NetworkResource) bool) (ret types.NetworkResource, found bool, err error) {
@@ -184,13 +191,21 @@ func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig,
 }
 
 func (t *DockerClient) findContainer(ctx context.Context, filter func(container types.Container) bool) ([]types.Container, error) {
+	defaultFilter := func(c types.Container) bool {
+		for _, n := range c.Names {
+			if strings.HasPrefix(strings.Trim(n, "/"), containerPrefix) {
+				return true
+			}
+		}
+		return false
+	}
 	list, err := t.ContainerList(ctx, types.ContainerListOptions{})
 	if err != nil {
 		return nil, err
 	}
 	var ret []types.Container
 	for _, item := range list {
-		if filter(item) {
+		if defaultFilter(item) && filter(item) {
 			ret = append(ret, item)
 		}
 	}
@@ -203,6 +218,10 @@ func (t *DockerClient) genProxyName(deployConfig DeployConfig) string {
 
 func (t *DockerClient) genSvcName(deployConfig DeployConfig) string {
 	return strings.Join([]string{containerPrefix, ComponentSvc, deployConfig.Name, HashShort(deployConfig)}, "-")
+}
+
+func (t *DockerClient) genSvcNameWithoutHash(deployConfig DeployConfig) string {
+	return strings.Join([]string{containerPrefix, ComponentSvc, deployConfig.Name}, "-")
 }
 
 func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id string, err error) {
@@ -222,7 +241,7 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 		}
 		_, _ = io.Copy(os.Stdout, reader)
 		if _, err := t.findImage(ctx, imageWithTag); err != nil {
-			if err != NotFound {
+			if err != ErrNotFound {
 				return id, err
 			}
 		} else {
@@ -276,6 +295,9 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 	if err != nil {
 		return "", err
 	}
+	if err := t.waitingHealthCheck(ctx, proxyClient, deployConfig); err != nil {
+		return "", err
+	}
 	_, err = proxyClient.Update(ctx, &proxy.UpdateReq{
 		Status: &proxy.Status{
 			Remote: fmt.Sprintf("%s:%d", containerName, deployConfig.ServicePort),
@@ -284,7 +306,29 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 	if err != nil {
 		return "", err
 	}
+
+	fmt.Println("clean up old instances")
+	runningContainerList, err := t.findContainer(ctx, func(container types.Container) bool {
+		for _, n := range container.Names {
+			if strings.Trim(n, "/") == containerName || !strings.HasPrefix(n, "/"+t.genSvcNameWithoutHash(deployConfig)) {
+				return false
+			}
+		}
+		return true
+	})
+	if err := t.stopRunningContainer(ctx, runningContainerList...); err != nil {
+		return "", err
+	}
 	return resp.ID, nil
+}
+
+func (t *DockerClient) stopRunningContainer(ctx context.Context, c ...types.Container) error {
+	for _, item := range c {
+		if err := t.ContainerStop(ctx, item.ID, DefaultTimeoutPointer); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (t *DockerClient) Stop(ctx context.Context, name string) (int, error) {
@@ -294,13 +338,12 @@ func (t *DockerClient) Stop(ctx context.Context, name string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	var timeout = DefaultTimeout
 	count := 0
 	for _, c := range list {
 		for _, n := range c.Names {
 			if strings.HasPrefix(strings.Trim(n, "/"), proxyContainerNamePrefix) || strings.HasPrefix(strings.Trim(n, "/"), svcContainerNamePrefix) {
 				fmt.Println("stop ", n)
-				if err := t.ContainerStop(ctx, c.ID, &timeout); err != nil {
+				if err := t.ContainerStop(ctx, c.ID, DefaultTimeoutPointer); err != nil {
 					return 0, err
 				}
 				count += 1
@@ -308,4 +351,39 @@ func (t *DockerClient) Stop(ctx context.Context, name string) (int, error) {
 		}
 	}
 	return count, nil
+}
+
+func (t *DockerClient) HealthCheck(ctx context.Context, client proxy.ProxyClient, deployConfig DeployConfig) error {
+	if deployConfig.HealthCheck == nil {
+		return fmt.Errorf("health check config is empty(nil)")
+	}
+	svcContainerName := t.genSvcName(deployConfig)
+	_, err := client.Check(ctx, &proxy.CheckReq{
+		Type: deployConfig.HealthCheck.Type,
+		Host: svcContainerName,
+		Path: deployConfig.HealthCheck.Path,
+		Port: deployConfig.HealthCheck.Port,
+	})
+	return err
+}
+
+func (t *DockerClient) waitingHealthCheck(ctx context.Context, client proxy.ProxyClient, config DeployConfig) error {
+	count := 0
+	for {
+		select {
+		case <-ctx.Done():
+			return ErrHealthCheckTimeout
+		default:
+		}
+		if err := t.HealthCheck(ctx, client, config); err != nil {
+			count += 1
+			fmt.Println(err)
+			fmt.Println("health check retry in 3 seconds, times:", count)
+			time.Sleep(time.Second * 3)
+			continue
+		} else {
+			break
+		}
+	}
+	return nil
 }

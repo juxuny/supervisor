@@ -7,6 +7,7 @@ package proxy;
 service proxy {
   rpc Status(StatusReq) returns (StatusResp) {}
   rpc Update(UpdateReq) returns (UpdateResp) {}
+  rpc Check(CheckReq) returns (CheckResp) {}
 }
 
 message Status {
@@ -30,3 +31,20 @@ message UpdateResp {
   Status status = 1;
 }
 
+enum HealthCheckType {
+  TypeDefault = 0;
+  TypeTcp = 1;
+}
+
+message CheckReq {
+
+  HealthCheckType type = 1;
+  string host = 2;
+  string path = 3;
+  uint32 port = 4;
+}
+
+message CheckResp {
+  uint32 code = 1;
+  string msg = 2;
+}

@@ -39,6 +39,24 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateReq) (*pb.UpdateResp, 
 	return &resp, nil
 }
 
+func (s *server) Check(ctx context.Context, req *pb.CheckReq) (*pb.CheckResp, error) {
+	var resp pb.CheckResp
+	var checkErr error
+	if req.Type == pb.HealthCheckType_TypeDefault {
+		checkErr = checkHttp(fmt.Sprintf("http://%s:%d%s", req.Host, req.Port, req.Path))
+	} else if req.Type == pb.HealthCheckType_TypeTcp {
+		checkErr = checkTcp(fmt.Sprintf("%s:%d", req.Host, req.Port))
+	} else {
+		return nil, errors.Errorf("unknown HealthCheckType:%v", req.Type)
+	}
+	if checkErr != nil {
+		return nil, checkErr
+	}
+	resp.Code = 0
+	resp.Msg = "success"
+	return &resp, nil
+}
+
 var (
 	configFile  string
 	fromEnv     bool

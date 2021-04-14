@@ -3,6 +3,7 @@ package supervisor
 import (
 	"context"
 	"github.com/docker/docker/api/types"
+	"github.com/juxuny/supervisor/proxy"
 	"testing"
 )
 
@@ -44,7 +45,12 @@ func TestDockerClient_Apply(t *testing.T) {
 		Envs: []*KeyValue{
 			{Key: "PORT", Value: "8080"},
 		},
-		Version: 6,
+		Version: 12,
+		HealthCheck: &HealthCheck{
+			Type: proxy.HealthCheckType_TypeDefault,
+			Path: "/",
+			Port: 8080,
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
