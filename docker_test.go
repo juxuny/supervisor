@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/docker/docker/api/types"
 	"testing"
-	"time"
 )
 
 func TestDockerClient_ContainerList(t *testing.T) {
@@ -12,7 +11,7 @@ func TestDockerClient_ContainerList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
 	containers, err := c.ContainerList(ctx, types.ContainerListOptions{})
 	if err != nil {
@@ -30,7 +29,7 @@ func TestDockerClient_Apply(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
-	_, err = c.Apply(ctx, DeployConfig{
+	id, err := c.Apply(ctx, DeployConfig{
 		ServicePort: 8080,
 		Name:        "web",
 		Image:       "juxuny/go-web",
@@ -41,5 +40,20 @@ func TestDockerClient_Apply(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+	t.Log("Container ID:", id)
+}
+
+func TestDockerClient_Stop(t *testing.T) {
+	c, err := NewDockerClient(NewDefaultDockerConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
+	if num, err := c.Stop(ctx, "web"); err != nil {
+		t.Fatal(err)
+	} else {
+		t.Log("stop containers:", num)
 	}
 }

@@ -14,8 +14,10 @@ import (
 )
 
 const (
-	DefaultTimeout    = time.Second * 15
+	DefaultTimeout    = time.Second * 30
 	DefaultProxyImage = "juxuny/supervisor-proxy:latest"
+	ComponentProxy    = "proxy"
+	ComponentSvc      = "svc"
 )
 
 var (
@@ -81,19 +83,24 @@ func (t *DockerClient) findImage(ctx context.Context, imageWithTag string) (ret 
 	return ret, NotFound
 }
 
+func (t *DockerClient) initNetwork(ctx context.Context, deployConfig DeployConfig) error {
+	return nil
+}
+
 func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig) error {
 	proxyContainerName := strings.Join([]string{containerPrefix, "proxy", deployConfig.Name}, "-")
-	list, err := t.ContainerList(ctx, types.ContainerListOptions{})
-	if err != nil {
-		return errors.Wrap(err, "find proxy container failed")
-	}
-	for _, item := range list {
-		for _, n := range item.Names {
-			if n == proxyContainerName {
-				// proxy instance is started
-				return nil
+	// check running container
+	if list, err := t.findContainer(ctx, func(container types.Container) bool {
+		for _, n := range container.Names {
+			if strings.Trim(n, "/") == proxyContainerName {
+				return true
 			}
 		}
+		return false
+	}); err != nil {
+		return err
+	} else if len(list) > 0 {
+		return nil
 	}
 	resp, err := t.ContainerCreate(ctx, &container.Config{
 		Image: t.Config.ProxyImage,
@@ -109,11 +116,26 @@ func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig)
 	return nil
 }
 
+func (t *DockerClient) findContainer(ctx context.Context, filter func(container types.Container) bool) ([]types.Container, error) {
+	list, err := t.ContainerList(ctx, types.ContainerListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	var ret []types.Container
+	for _, item := range list {
+		if filter(item) {
+			ret = append(ret, item)
+		}
+	}
+	return ret, nil
+}
+
 func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id string, err error) {
 	imageWithTag := deployConfig.Image + ":" + deployConfig.Tag
 	if deployConfig.PullRetryTimes <= 0 {
 		deployConfig.PullRetryTimes = 3
 	}
+	fmt.Println("pulling image:", imageWithTag)
 	for i := 0; i < int(deployConfig.PullRetryTimes); i++ {
 		reader, err := t.ImagePull(ctx, imageWithTag, types.ImagePullOptions{})
 		if err != nil {
@@ -134,6 +156,21 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 	}
 
 	containerName := strings.Join([]string{containerPrefix, "svc", deployConfig.Name}, "-")
+
+	// check running container
+	if list, err := t.findContainer(ctx, func(container types.Container) bool {
+		for _, n := range container.Names {
+			if strings.Trim(n, "/") == containerName {
+				return true
+			}
+		}
+		return false
+	}); err != nil {
+		return "", err
+	} else if len(list) > 0 {
+		return list[0].ID, nil
+	}
+
 	resp, err := t.ContainerCreate(ctx, &container.Config{
 		Image: imageWithTag,
 	}, &container.HostConfig{
@@ -217,4 +254,27 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 	//nc := network.NetworkingConfig{}
 	//t.ContainerCreate(ctx, &config, &hostConfig, &nc, nil, strings.Join([]string{containerPrefix, deployConfig.Name}, "-"))
 	return
+}
+
+func (t *DockerClient) Stop(ctx context.Context, name string) (int, error) {
+	proxyContainerNamePrefix := strings.Join([]string{containerPrefix, ComponentProxy, name}, "-")
+	svcContainerNamePrefix := strings.Join([]string{containerPrefix, ComponentSvc, name}, "-")
+	list, err := t.ContainerList(ctx, types.ContainerListOptions{})
+	if err != nil {
+		return 0, err
+	}
+	var timeout = DefaultTimeout
+	count := 0
+	for _, c := range list {
+		for _, n := range c.Names {
+			if strings.HasPrefix(strings.Trim(n, "/"), proxyContainerNamePrefix) || strings.HasPrefix(strings.Trim(n, "/"), svcContainerNamePrefix) {
+				fmt.Println("stop ", n)
+				if err := t.ContainerStop(ctx, c.ID, &timeout); err != nil {
+					return 0, err
+				}
+				count += 1
+			}
+		}
+	}
+	return count, nil
 }
