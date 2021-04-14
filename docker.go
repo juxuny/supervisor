@@ -141,7 +141,9 @@ func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig,
 		return list[0].ID, nil
 	}
 	resp, err := t.ContainerCreate(ctx, &container.Config{
-		Image: t.Config.ProxyImage,
+		Hostname:   proxyContainerName,
+		Domainname: proxyContainerName,
+		Image:      t.Config.ProxyImage,
 		ExposedPorts: nat.PortSet{
 			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)): struct{}{},
 		},
@@ -235,7 +237,9 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 	}
 
 	resp, err := t.ContainerCreate(ctx, &container.Config{
-		Image: imageWithTag,
+		Hostname:   containerName,
+		Domainname: containerName,
+		Image:      imageWithTag,
 	}, &container.HostConfig{
 		AutoRemove: true,
 	}, nil, nil, containerName)
