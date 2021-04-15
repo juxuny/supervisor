@@ -4,13 +4,11 @@ import (
 	"context"
 	"github.com/docker/docker/api/types"
 	"github.com/juxuny/supervisor/proxy"
-	"os"
-	"path"
 	"testing"
 )
 
 func TestDockerClient_ContainerList(t *testing.T) {
-	c, err := NewDockerClient(NewDefaultDockerConfig())
+	c, err := NewDockerClient(NewDefaultDockerClientConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,16 +24,12 @@ func TestDockerClient_ContainerList(t *testing.T) {
 }
 
 func TestDockerClient_Apply(t *testing.T) {
-	c, err := NewDockerClient(NewDefaultDockerConfig())
+	c, err := NewDockerClient(NewDefaultDockerClientConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
 	if num, err := c.Stop(ctx, "web"); err != nil {
 		t.Fatal(err)
 	} else {
@@ -48,7 +42,7 @@ func TestDockerClient_Apply(t *testing.T) {
 		Image:       "juxuny/go-web",
 		Tag:         "latest",
 		Mounts: []*Mount{
-			{HostPath: path.Join(wd, "tmp"), MountPath: "/html"},
+			{HostPath: "tmp", MountPath: "/html"},
 		},
 		EnvData: "QUNDRVNTX0tFWT0iMTIzIDQ1NiIKU0VDUkVUPSAxMjM0NTc3OA==",
 		Envs: []*KeyValue{
@@ -68,7 +62,7 @@ func TestDockerClient_Apply(t *testing.T) {
 }
 
 func TestDockerClient_Stop(t *testing.T) {
-	c, err := NewDockerClient(NewDefaultDockerConfig())
+	c, err := NewDockerClient(NewDefaultDockerClientConfig())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -21,11 +21,30 @@ func getProxyClient(host string) (client proxy.ProxyClient, err error) {
 	return client, nil
 }
 
+func getSupervisorClient(host string) (client supervisor.SupervisorClient, err error) {
+	conn, err := grpc.Dial(host, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		return nil, errors.Wrap(err, "connect failed")
+	}
+	client = supervisor.NewSupervisorClient(conn)
+	return client, nil
+}
+
 func (t *server) ProxyStatus(ctx context.Context, req *proxy.StatusReq) (resp *proxy.StatusResp, err error) {
 	return resp, nil
 }
 func (t *server) Apply(ctx context.Context, req *supervisor.ApplyReq) (resp *supervisor.ApplyResp, err error) {
-	return
+	resp = &supervisor.ApplyResp{}
+	dockerClient, err := supervisor.NewDockerClient(supervisor.NewDefaultDockerClientConfig())
+	if err != nil {
+		return nil, err
+	}
+	_, err = dockerClient.Apply(ctx, *req.Config)
+	if err != nil {
+		return nil, err
+	}
+	resp.Msg = "success"
+	return resp, nil
 }
 
 func (t *server) Get(ctx context.Context, req *supervisor.GetReq) (resp *supervisor.GetResp, err error) {

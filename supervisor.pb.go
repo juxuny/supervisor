@@ -30,7 +30,7 @@ func (m *ApplyReq) Reset()         { *m = ApplyReq{} }
 func (m *ApplyReq) String() string { return proto.CompactTextString(m) }
 func (*ApplyReq) ProtoMessage()    {}
 func (*ApplyReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_supervisor_fb9dbb900a06583f, []int{0}
+	return fileDescriptor_supervisor_734a76f0c4e7cdd7, []int{0}
 }
 func (m *ApplyReq) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ApplyReq.Unmarshal(m, b)
@@ -69,7 +69,7 @@ func (m *ApplyResp) Reset()         { *m = ApplyResp{} }
 func (m *ApplyResp) String() string { return proto.CompactTextString(m) }
 func (*ApplyResp) ProtoMessage()    {}
 func (*ApplyResp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_supervisor_fb9dbb900a06583f, []int{1}
+	return fileDescriptor_supervisor_734a76f0c4e7cdd7, []int{1}
 }
 func (m *ApplyResp) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ApplyResp.Unmarshal(m, b)
@@ -124,7 +124,7 @@ func (m *DeployConfig) Reset()         { *m = DeployConfig{} }
 func (m *DeployConfig) String() string { return proto.CompactTextString(m) }
 func (*DeployConfig) ProtoMessage()    {}
 func (*DeployConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_supervisor_fb9dbb900a06583f, []int{2}
+	return fileDescriptor_supervisor_734a76f0c4e7cdd7, []int{2}
 }
 func (m *DeployConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeployConfig.Unmarshal(m, b)
@@ -234,7 +234,7 @@ func (m *HealthCheck) Reset()         { *m = HealthCheck{} }
 func (m *HealthCheck) String() string { return proto.CompactTextString(m) }
 func (*HealthCheck) ProtoMessage()    {}
 func (*HealthCheck) Descriptor() ([]byte, []int) {
-	return fileDescriptor_supervisor_fb9dbb900a06583f, []int{3}
+	return fileDescriptor_supervisor_734a76f0c4e7cdd7, []int{3}
 }
 func (m *HealthCheck) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HealthCheck.Unmarshal(m, b)
@@ -287,7 +287,7 @@ func (m *Mount) Reset()         { *m = Mount{} }
 func (m *Mount) String() string { return proto.CompactTextString(m) }
 func (*Mount) ProtoMessage()    {}
 func (*Mount) Descriptor() ([]byte, []int) {
-	return fileDescriptor_supervisor_fb9dbb900a06583f, []int{4}
+	return fileDescriptor_supervisor_734a76f0c4e7cdd7, []int{4}
 }
 func (m *Mount) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Mount.Unmarshal(m, b)
@@ -333,7 +333,7 @@ func (m *KeyValue) Reset()         { *m = KeyValue{} }
 func (m *KeyValue) String() string { return proto.CompactTextString(m) }
 func (*KeyValue) ProtoMessage()    {}
 func (*KeyValue) Descriptor() ([]byte, []int) {
-	return fileDescriptor_supervisor_fb9dbb900a06583f, []int{5}
+	return fileDescriptor_supervisor_734a76f0c4e7cdd7, []int{5}
 }
 func (m *KeyValue) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_KeyValue.Unmarshal(m, b)
@@ -378,7 +378,7 @@ func (m *GetReq) Reset()         { *m = GetReq{} }
 func (m *GetReq) String() string { return proto.CompactTextString(m) }
 func (*GetReq) ProtoMessage()    {}
 func (*GetReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_supervisor_fb9dbb900a06583f, []int{6}
+	return fileDescriptor_supervisor_734a76f0c4e7cdd7, []int{6}
 }
 func (m *GetReq) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetReq.Unmarshal(m, b)
@@ -416,7 +416,7 @@ func (m *GetResp) Reset()         { *m = GetResp{} }
 func (m *GetResp) String() string { return proto.CompactTextString(m) }
 func (*GetResp) ProtoMessage()    {}
 func (*GetResp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_supervisor_fb9dbb900a06583f, []int{7}
+	return fileDescriptor_supervisor_734a76f0c4e7cdd7, []int{7}
 }
 func (m *GetResp) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetResp.Unmarshal(m, b)
@@ -454,9 +454,9 @@ func init() {
 	proto.RegisterType((*GetResp)(nil), "supervisor.GetResp")
 }
 
-func init() { proto.RegisterFile("supervisor.proto", fileDescriptor_supervisor_fb9dbb900a06583f) }
+func init() { proto.RegisterFile("supervisor.proto", fileDescriptor_supervisor_734a76f0c4e7cdd7) }
 
-var fileDescriptor_supervisor_fb9dbb900a06583f = []byte{
+var fileDescriptor_supervisor_734a76f0c4e7cdd7 = []byte{
 	// 567 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x53, 0x4d, 0x6f, 0xd4, 0x40,
 	0x0c, 0x65, 0xbb, 0x9f, 0x71, 0x4a, 0xb5, 0x1d, 0x0a, 0x0c, 0x4b, 0x8b, 0x4a, 0x4e, 0x0b, 0x87,

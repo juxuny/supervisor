@@ -22,7 +22,7 @@ message ApplyResp {
 }
 
 message DeployConfig {
-  uint32 service_port = 1;
+  uint32 service_port = 1; //`yaml:"service_port"`
   string name = 2;
   string image = 3;
   string tag = 4;

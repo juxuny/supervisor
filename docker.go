@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"io"
 	"os"
+	"path"
 	"strings"
 	"time"
 )
@@ -42,7 +43,7 @@ type DockerClientConfig struct {
 	ProxyImage string
 }
 
-func NewDefaultDockerConfig() DockerClientConfig {
+func NewDefaultDockerClientConfig() DockerClientConfig {
 	return DockerClientConfig{
 		Host:       "unix:///var/run/docker.sock",
 		ProxyImage: DefaultProxyImage,
@@ -410,9 +411,18 @@ func (t *DockerClient) parseMounts(deployConfig DeployConfig) []mount.Mount {
 		return ret
 	}
 	for _, m := range deployConfig.Mounts {
+		hostPath := m.HostPath
+		if strings.HasPrefix(hostPath, "./") {
+			wd, err := os.Getwd()
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			hostPath = path.Join(wd, strings.Replace(hostPath, "./", "", 1))
+		}
 		ret = append(ret, mount.Mount{
 			Type:   mount.TypeBind,
-			Source: m.HostPath,
+			Source: hostPath,
 			Target: m.MountPath,
 		})
 	}

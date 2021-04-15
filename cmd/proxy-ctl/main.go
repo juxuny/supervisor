@@ -2,17 +2,17 @@ package main
 
 import (
 	"fmt"
+	"github.com/juxuny/supervisor"
 	pb "github.com/juxuny/supervisor/proxy"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"os"
-	"time"
 )
 
 const (
 	DefaultControlPlanePort = 50050
-	Timeout                 = time.Second * 15
+	Timeout                 = supervisor.DefaultTimeout
 )
 
 var (
