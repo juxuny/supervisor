@@ -6,8 +6,10 @@ import (
 	pb "github.com/juxuny/supervisor/proxy"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
+	"math/rand"
 	"reflect"
 	"strings"
+	"time"
 )
 
 func Hash(v interface{}) string {
@@ -45,4 +47,13 @@ func createProxyControlClient(host string) (client pb.ProxyClient, err error) {
 	}
 	client = pb.NewProxyClient(conn)
 	return client, nil
+}
+
+func randNum(min, max int) int {
+	n := rand.Intn(max - min)
+	return n + min
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }

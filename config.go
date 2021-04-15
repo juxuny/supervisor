@@ -38,7 +38,7 @@ func Init(config Config) error {
 		return fmt.Errorf("store dir cannot be empty")
 	}
 	if stat, err := os.Stat(config.StoreDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(config.StoreDir, 0666); err != nil {
+		if err := os.MkdirAll(config.StoreDir, 0776); err != nil {
 			return err
 		}
 	} else if !stat.IsDir() {

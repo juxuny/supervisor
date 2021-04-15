@@ -2,9 +2,11 @@ package supervisor
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/juxuny/supervisor/proxy"
@@ -138,8 +140,8 @@ func (t *DockerClient) createProxyEnv(deployConfig DeployConfig) []string {
 	svcContainerName := t.genSvcName(deployConfig)
 	return []string{
 		"REMOTE=" + svcContainerName + fmt.Sprintf(":%d", deployConfig.ServicePort),
-		"CONTROL_PORT=" + fmt.Sprintf("%d", deployConfig.ServicePort+ControlPortOffset),
-		"LISTEN_PORT=" + fmt.Sprintf("%d", deployConfig.ServicePort),
+		"CONTROL_PORT=" + fmt.Sprintf("%d", deployConfig.ProxyPort+ControlPortOffset),
+		"LISTEN_PORT=" + fmt.Sprintf("%d", deployConfig.ProxyPort),
 	}
 }
 
@@ -163,18 +165,18 @@ func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig,
 		Domainname: proxyContainerName,
 		Image:      t.Config.ProxyImage,
 		ExposedPorts: nat.PortSet{
-			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)):                   struct{}{},
-			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort+ControlPortOffset)): struct{}{},
+			nat.Port(fmt.Sprintf("%d", deployConfig.ProxyPort)):                   struct{}{},
+			nat.Port(fmt.Sprintf("%d", deployConfig.ProxyPort+ControlPortOffset)): struct{}{},
 		},
 		Env: t.createProxyEnv(deployConfig),
 	}, &container.HostConfig{
 		AutoRemove: true,
 		PortBindings: nat.PortMap{
-			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)): []nat.PortBinding{
-				{HostPort: fmt.Sprintf("%d", deployConfig.ServicePort)},
+			nat.Port(fmt.Sprintf("%d", deployConfig.ProxyPort)): []nat.PortBinding{
+				{HostPort: fmt.Sprintf("%d", deployConfig.ProxyPort)},
 			},
-			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort+ControlPortOffset)): []nat.PortBinding{
-				{HostPort: fmt.Sprintf("%d", deployConfig.ServicePort+ControlPortOffset)},
+			nat.Port(fmt.Sprintf("%d", deployConfig.ProxyPort+ControlPortOffset)): []nat.PortBinding{
+				{HostPort: fmt.Sprintf("%d", deployConfig.ProxyPort+ControlPortOffset)},
 			},
 		},
 	}, nil, nil, proxyContainerName)
@@ -187,6 +189,7 @@ func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig,
 	if err := callback(resp); err != nil {
 		return resp.ID, err
 	}
+	fmt.Println("started")
 	return resp.ID, nil
 }
 
@@ -270,7 +273,11 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 	} else if len(list) > 0 {
 		return list[0].ID, nil
 	}
-
+	envs, err := t.parseEnv(deployConfig)
+	if err != nil {
+		return "", err
+	}
+	fmt.Println("create svc")
 	resp, err := t.ContainerCreate(ctx, &container.Config{
 		Hostname:   containerName,
 		Domainname: containerName,
@@ -278,26 +285,36 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 		ExposedPorts: nat.PortSet{
 			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)): struct{}{},
 		},
+		Env: envs,
 	}, &container.HostConfig{
 		AutoRemove: true,
+		//PortBindings: nat.PortMap{
+		//	nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)): []nat.PortBinding{
+		//		{HostPort: fmt.Sprintf("%d", deployConfig.ServicePort + uint32(randNum(1000, 2000)))},
+		//	},
+		//},
+		Mounts: t.parseMounts(deployConfig),
 	}, nil, nil, containerName)
 	if err != nil {
 		return "", errors.Wrap(err, "create container failed")
 	}
+	fmt.Println("start svc")
 	if err := t.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		return "", errors.Wrap(err, "start container failed")
 	}
+	fmt.Println("bind network")
 	if err := t.NetworkConnect(ctx, networkID, resp.ID, nil); err != nil {
 		return resp.ID, err
 	}
 
-	proxyClient, err := createProxyControlClient(fmt.Sprintf("127.0.0.1:%d", deployConfig.ServicePort+ControlPortOffset))
+	proxyClient, err := createProxyControlClient(fmt.Sprintf("127.0.0.1:%d", deployConfig.ProxyPort+ControlPortOffset))
 	if err != nil {
 		return "", err
 	}
 	if err := t.waitingHealthCheck(ctx, proxyClient, deployConfig); err != nil {
 		return "", err
 	}
+	fmt.Println("update proxy svc")
 	_, err = proxyClient.Update(ctx, &proxy.UpdateReq{
 		Status: &proxy.Status{
 			Remote: fmt.Sprintf("%s:%d", containerName, deployConfig.ServicePort),
@@ -353,6 +370,55 @@ func (t *DockerClient) Stop(ctx context.Context, name string) (int, error) {
 	return count, nil
 }
 
+func (t *DockerClient) parseEnv(deployConfig DeployConfig) ([]string, error) {
+	var ret []string
+	m := make(map[string]string)
+	if deployConfig.EnvData != "" {
+		data, err := base64.StdEncoding.DecodeString(deployConfig.EnvData)
+		if err != nil {
+			return nil, err
+		}
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			l := strings.Trim(line, " ")
+			if strings.HasPrefix(l, "#") {
+				continue
+			}
+			index := strings.Index(l, "=")
+			if index < 0 {
+				continue
+			}
+			k := l[:index]
+			v := l[index:]
+			k = strings.Trim(k, "\" =")
+			v = strings.Trim(v, "=\n\" ")
+			m[k] = v
+		}
+	}
+	for _, kv := range deployConfig.Envs {
+		m[kv.Key] = kv.Value
+	}
+	for k, v := range m {
+		ret = append(ret, k+"="+v)
+	}
+	return ret, nil
+}
+
+func (t *DockerClient) parseMounts(deployConfig DeployConfig) []mount.Mount {
+	ret := make([]mount.Mount, 0)
+	if deployConfig.Mounts == nil {
+		return ret
+	}
+	for _, m := range deployConfig.Mounts {
+		ret = append(ret, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: m.HostPath,
+			Target: m.MountPath,
+		})
+	}
+	return ret
+}
+
 func (t *DockerClient) HealthCheck(ctx context.Context, client proxy.ProxyClient, deployConfig DeployConfig) error {
 	if deployConfig.HealthCheck == nil {
 		return fmt.Errorf("health check config is empty(nil)")
@@ -368,6 +434,7 @@ func (t *DockerClient) HealthCheck(ctx context.Context, client proxy.ProxyClient
 }
 
 func (t *DockerClient) waitingHealthCheck(ctx context.Context, client proxy.ProxyClient, config DeployConfig) error {
+	fmt.Println("waiting health check")
 	count := 0
 	for {
 		select {

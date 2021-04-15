@@ -32,6 +32,7 @@ message DeployConfig {
   uint32 pull_retry_times = 8;
   uint32 version = 9;
   HealthCheck health_check = 10;
+  uint32 proxy_port = 11;
 }
 
 message HealthCheck {
