@@ -8,6 +8,10 @@ import (
 	"os"
 )
 
+const (
+	DefaultStoreDir = "tmp"
+)
+
 type ConfigWrapper struct {
 	Supervisor Config `json:"supervisor" yaml:"supervisor"`
 }

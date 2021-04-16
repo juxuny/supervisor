@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/juxuny/supervisor"
+	"github.com/juxuny/supervisor/log"
 	"google.golang.org/grpc"
-	"log"
 	"net"
 	"os"
 )
@@ -13,6 +13,7 @@ import (
 var (
 	configFile   string
 	globalConfig supervisor.Config
+	logger       = log.NewLogger("[sup]")
 )
 
 func main() {
@@ -31,12 +32,12 @@ func main() {
 	addr := fmt.Sprintf(":%d", config.Supervisor.ControlPort)
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		logger.Error("failed to listen:", err)
 	}
 	s := grpc.NewServer()
 	fmt.Println("listen", addr)
 	supervisor.RegisterSupervisorServer(s, &server{})
 	if err := s.Serve(ln); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		logger.Error("failed to serve:", err)
 	}
 }

@@ -217,7 +217,11 @@ func (t *DockerClient) findContainer(ctx context.Context, filter func(container 
 }
 
 func (t *DockerClient) genProxyName(deployConfig DeployConfig) string {
-	return strings.Join([]string{containerPrefix, ComponentProxy, deployConfig.Name}, "-")
+	return t.genProxyNameByServiceName(deployConfig.Name)
+}
+
+func (t *DockerClient) genProxyNameByServiceName(name string) string {
+	return strings.Join([]string{containerPrefix, ComponentProxy, name}, "-")
 }
 
 func (t *DockerClient) genSvcName(deployConfig DeployConfig) string {
@@ -286,15 +290,17 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 		ExposedPorts: nat.PortSet{
 			nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)): struct{}{},
 		},
-		Env: envs,
+		Env:        envs,
+		Entrypoint: deployConfig.Entrypoint,
 	}, &container.HostConfig{
-		AutoRemove: true,
+		AutoRemove: deployConfig.Restart == "" || deployConfig.Restart == "no",
 		//PortBindings: nat.PortMap{
 		//	nat.Port(fmt.Sprintf("%d", deployConfig.ServicePort)): []nat.PortBinding{
 		//		{HostPort: fmt.Sprintf("%d", deployConfig.ServicePort + uint32(randNum(1000, 2000)))},
 		//	},
 		//},
-		Mounts: t.parseMounts(deployConfig),
+		RestartPolicy: container.RestartPolicy{Name: deployConfig.Restart},
+		Mounts:        t.parseMounts(deployConfig),
 	}, nil, nil, containerName)
 	if err != nil {
 		return "", errors.Wrap(err, "create container failed")
@@ -412,7 +418,7 @@ func (t *DockerClient) parseMounts(deployConfig DeployConfig) []mount.Mount {
 	}
 	for _, m := range deployConfig.Mounts {
 		hostPath := m.HostPath
-		if strings.HasPrefix(hostPath, "./") {
+		if strings.HasPrefix(hostPath, "./") || !strings.HasPrefix(hostPath, "/") {
 			wd, err := os.Getwd()
 			if err != nil {
 				fmt.Println(err)
@@ -463,4 +469,24 @@ func (t *DockerClient) waitingHealthCheck(ctx context.Context, client proxy.Prox
 		}
 	}
 	return nil
+}
+
+func (t *DockerClient) FindProxyContainer(ctx context.Context, name string) (ret *types.Container, err error) {
+	proxyContainerName := t.genProxyNameByServiceName(name)
+	list, err := t.findContainer(ctx, func(container types.Container) bool {
+		for _, n := range container.Names {
+			s := strings.Trim(n, "/")
+			if s == proxyContainerName {
+				return true
+			}
+		}
+		return false
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(list) == 0 {
+		return nil, ErrNotFound
+	}
+	return &list[0], nil
 }

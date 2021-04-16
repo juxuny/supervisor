@@ -36,7 +36,7 @@ func TestDockerClient_Apply(t *testing.T) {
 		t.Log("stop containers:", num)
 	}
 	id, err := c.Apply(ctx, DeployConfig{
-		ServicePort: 8080,
+		ServicePort: 8090,
 		ProxyPort:   8090,
 		Name:        "web",
 		Image:       "juxuny/go-web",
@@ -48,11 +48,15 @@ func TestDockerClient_Apply(t *testing.T) {
 		Envs: []*KeyValue{
 			{Key: "PORT", Value: "8080"},
 		},
-		Version: 3,
+		Version: 4,
 		HealthCheck: &HealthCheck{
 			Type: proxy.HealthCheckType_TypeDefault,
 			Path: "/",
-			Port: 8080,
+			Port: 8090,
+		},
+		Restart: "always",
+		Entrypoint: []string{
+			"/app/go-web", "-d", "/html", "-p", "8090",
 		},
 	})
 	if err != nil {

@@ -7,9 +7,14 @@ package supervisor;
 import 'proxy/proxy.proto';
 
 service Supervisor {
-  rpc ProxyStatus(proxy.StatusReq) returns (proxy.StatusResp) {}
+  rpc ProxyStatus(ProxyStatusReq) returns (proxy.StatusResp) {}
   rpc Apply(ApplyReq) returns (ApplyResp) {}
   rpc Get(GetReq) returns (GetResp) {}
+  rpc Stop(StopReq) returns (StopResp) {}
+}
+
+message ProxyStatusReq {
+  string name = 1;
 }
 
 message ApplyReq {
@@ -33,6 +38,8 @@ message DeployConfig {
   uint32 version = 9;
   HealthCheck health_check = 10;
   uint32 proxy_port = 11;
+  repeated string entrypoint = 12;
+  string restart = 13;
 }
 
 message HealthCheck {
@@ -58,3 +65,9 @@ message GetReq {
 message GetResp {
   repeated DeployConfig config = 1;
 }
+
+message StopReq {
+  string name = 1;
+}
+
+message StopResp {}

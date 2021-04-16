@@ -26,6 +26,7 @@ func Hash(v interface{}) string {
 		}
 		ft := tt.Field(i)
 		fv := vv.Field(i)
+		fmt.Println("hash: ", fv.Interface())
 		h.Write([]byte(fmt.Sprintf("%s:%v\n", ft.Name, fv.Interface())))
 	}
 	//fmt.Println(tt.Kind(), vv.NumField())
@@ -34,6 +35,7 @@ func Hash(v interface{}) string {
 
 func HashShort(v interface{}) string {
 	h := Hash(v)
+	fmt.Println("hash:", h)
 	if len(h) > 10 {
 		return h[:10]
 	}
