@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"github.com/juxuny/supervisor"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 )
@@ -23,4 +25,17 @@ func saveDeployConfig(deployConfig supervisor.DeployConfig) error {
 		return err
 	}
 	return ioutil.WriteFile(fileName, data, 0644)
+}
+
+func touchDir(dir string) error {
+	stat, err := os.Stat(dir)
+	if os.IsNotExist(err) {
+		return os.MkdirAll(dir, 0776)
+	}
+	if stat.IsDir() {
+		return nil
+	} else {
+		return fmt.Errorf("path %s is not a director", dir)
+	}
+	return nil
 }

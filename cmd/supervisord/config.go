@@ -2,6 +2,8 @@ package main
 
 import "github.com/juxuny/supervisor"
 
+const DefaultUploadDir = "uploads"
+
 func getDockerClientConfig() supervisor.DockerClientConfig {
 	config := supervisor.NewDefaultDockerClientConfig()
 	if globalConfig.ProxyImage != "" {

@@ -7,6 +7,8 @@ import (
 	"github.com/juxuny/supervisor/proxy"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
+	"os"
+	"path"
 )
 
 type server struct {
@@ -87,4 +89,66 @@ func (t *server) Stop(ctx context.Context, req *supervisor.StopReq) (resp *super
 	}
 	_, err = dockerClient.Stop(ctx, req.Name)
 	return &supervisor.StopResp{}, err
+}
+
+func (t *server) Upload(ctx context.Context, req *supervisor.UploadReq) (resp *supervisor.UploadResp, err error) {
+	uploadDir := path.Join(globalConfig.StoreDir, DefaultUploadDir)
+	if err := touchDir(uploadDir); err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+	fileName := path.Join(uploadDir, req.FileName)
+	if _, err := os.Stat(fileName); os.IsExist(err) {
+		if req.Force {
+			err = os.Remove(fileName)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, fmt.Errorf("file is exists: %s", req.FileName)
+		}
+	}
+	mode := os.FileMode(0644)
+	if req.Executable {
+		mode = 0755
+	}
+	defer func() {
+		if req.BlockNum < req.BlockNumTotal {
+			return
+		}
+		// upload finished, compare the file hash
+		var realHash string
+		realHash, err = supervisor.GetFileHash(fileName, req.HashType)
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+		if realHash != req.FileHash {
+			logger.Error("real hash: "+realHash, " need: "+req.FileHash)
+			err = fmt.Errorf("incrrect file hash: %s <> %s", realHash, req.FileHash)
+			return
+		}
+	}()
+	var f *os.File
+	if req.BlockNum == 1 {
+		// block num = 1 need to create a new file
+		logger.Info("create a new file")
+		if _, err := os.Stat(fileName); !os.IsNotExist(err) {
+			_ = os.Remove(fileName)
+		}
+		f, err = os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, mode)
+	} else {
+		f, err = os.OpenFile(fileName, os.O_WRONLY|os.O_APPEND, mode)
+	}
+	if err != nil {
+		logger.Error(err)
+		return nil, fmt.Errorf("write failed: %v", err)
+	}
+	defer f.Close()
+	_, err = f.Write(req.Data)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+	return &supervisor.UploadResp{}, nil
 }

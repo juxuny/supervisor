@@ -20,6 +20,7 @@ import (
 
 const (
 	DefaultTimeout    = time.Second * 30
+	DefaultBlockSize  = 1 << 20 // 1M
 	DefaultProxyImage = "juxuny/supervisor-proxy:latest"
 	ComponentProxy    = "proxy"
 	ComponentSvc      = "svc"

@@ -23,6 +23,7 @@ type SupervisorClient interface {
 	Apply(ctx context.Context, in *ApplyReq, opts ...grpc.CallOption) (*ApplyResp, error)
 	Get(ctx context.Context, in *GetReq, opts ...grpc.CallOption) (*GetResp, error)
 	Stop(ctx context.Context, in *StopReq, opts ...grpc.CallOption) (*StopResp, error)
+	Upload(ctx context.Context, in *UploadReq, opts ...grpc.CallOption) (*UploadResp, error)
 }
 
 type supervisorClient struct {
@@ -69,6 +70,15 @@ func (c *supervisorClient) Stop(ctx context.Context, in *StopReq, opts ...grpc.C
 	return out, nil
 }
 
+func (c *supervisorClient) Upload(ctx context.Context, in *UploadReq, opts ...grpc.CallOption) (*UploadResp, error) {
+	out := new(UploadResp)
+	err := c.cc.Invoke(ctx, "/supervisor.Supervisor/Upload", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SupervisorServer is the server API for Supervisor service.
 // All implementations must embed UnimplementedSupervisorServer
 // for forward compatibility
@@ -77,6 +87,7 @@ type SupervisorServer interface {
 	Apply(context.Context, *ApplyReq) (*ApplyResp, error)
 	Get(context.Context, *GetReq) (*GetResp, error)
 	Stop(context.Context, *StopReq) (*StopResp, error)
+	Upload(context.Context, *UploadReq) (*UploadResp, error)
 	mustEmbedUnimplementedSupervisorServer()
 }
 
@@ -95,6 +106,9 @@ func (UnimplementedSupervisorServer) Get(context.Context, *GetReq) (*GetResp, er
 }
 func (UnimplementedSupervisorServer) Stop(context.Context, *StopReq) (*StopResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Stop not implemented")
+}
+func (UnimplementedSupervisorServer) Upload(context.Context, *UploadReq) (*UploadResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Upload not implemented")
 }
 func (UnimplementedSupervisorServer) mustEmbedUnimplementedSupervisorServer() {}
 
@@ -181,6 +195,24 @@ func _Supervisor_Stop_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Supervisor_Upload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UploadReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupervisorServer).Upload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/supervisor.Supervisor/Upload",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupervisorServer).Upload(ctx, req.(*UploadReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Supervisor_ServiceDesc is the grpc.ServiceDesc for Supervisor service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -203,6 +235,10 @@ var Supervisor_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Stop",
 			Handler:    _Supervisor_Stop_Handler,
+		},
+		{
+			MethodName: "Upload",
+			Handler:    _Supervisor_Upload_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

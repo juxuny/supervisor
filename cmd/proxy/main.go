@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/juxuny/supervisor/env"
+	"github.com/juxuny/env"
 	pb "github.com/juxuny/supervisor/proxy"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
