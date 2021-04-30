@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/juxuny/supervisor"
+	"google.golang.org/grpc/credentials"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
@@ -38,4 +40,20 @@ func touchDir(dir string) error {
 		return fmt.Errorf("path %s is not a director", dir)
 	}
 	return nil
+}
+
+func loadTLSCredentials() (credentials.TransportCredentials, error) {
+	// Load server's certificate and private key
+	serverCert, err := tls.LoadX509KeyPair("cert/server-cert.pem", "cert/server-key.pem")
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the credentials and return it
+	config := &tls.Config{
+		Certificates: []tls.Certificate{serverCert},
+		ClientAuth:   tls.NoClientCert,
+	}
+
+	return credentials.NewTLS(config), nil
 }

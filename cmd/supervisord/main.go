@@ -34,7 +34,19 @@ func main() {
 	if err != nil {
 		logger.Error("failed to listen:", err)
 	}
-	s := grpc.NewServer()
+	defer func() {
+		if err := ln.Close(); err != nil {
+			logger.Error(err)
+		}
+	}()
+	tlsCredentials, err := loadTLSCredentials()
+	if err != nil {
+		logger.Error("cannot load TLS credentials: ", err)
+		os.Exit(-1)
+	}
+	s := grpc.NewServer(
+		grpc.Creds(tlsCredentials),
+	)
 	fmt.Println("listen", addr)
 	supervisor.RegisterSupervisorServer(s, &server{})
 	if err := s.Serve(ln); err != nil {
