@@ -27,7 +27,7 @@ var applyCmd = &cobra.Command{
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), supervisor.DefaultTimeout)
 		defer cancel()
-		client, err := getClient(ctx, applyFlag.Host)
+		client, err := getClient(ctx, applyFlag.Host, applyFlag.CertFile)
 		if err != nil {
 			logger.Error(err)
 			os.Exit(-1)
@@ -43,6 +43,7 @@ var applyCmd = &cobra.Command{
 
 func init() {
 	applyCmd.PersistentFlags().StringVar(&applyFlag.Host, "host", "127.0.0.1:50060", "host")
+	applyCmd.PersistentFlags().StringVar(&applyFlag.CertFile, "cert-file", "cert/ca-cert.pem", "cert file")
 	applyCmd.PersistentFlags().StringVar(&applyFlag.File, "file", "", "deploy yaml")
 	rootCmd.AddCommand(applyCmd)
 }

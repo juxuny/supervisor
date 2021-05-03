@@ -1,5 +1,6 @@
 package supervisor
 
 type BaseFlag struct {
-	Host string
+	Host     string
+	CertFile string
 }

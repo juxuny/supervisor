@@ -42,7 +42,7 @@ var uploadCmd = &cobra.Command{
 		logger.Info("block num: ", blockNum, " block size:", uploadFlag.BlockSize, " file hash:", fileHash)
 		ctx, cancel := context.WithTimeout(context.Background(), supervisor.DefaultTimeout)
 		defer cancel()
-		client, err := getClient(ctx, uploadFlag.Host)
+		client, err := getClient(ctx, uploadFlag.Host, uploadFlag.CertFile)
 		if err != nil {
 			logger.Error(err)
 			os.Exit(-1)
@@ -86,6 +86,7 @@ var uploadCmd = &cobra.Command{
 
 func init() {
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.Host, "host", "127.0.0.1:50060", "host")
+	uploadCmd.PersistentFlags().StringVar(&uploadFlag.CertFile, "cert-file", "cert/ca-cert.pem", "cert file")
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.Name, "name", "", "file name")
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.FilePath, "file", "", "file to upload")
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.BlockSize, "blockSize", "1m", "upload block size")

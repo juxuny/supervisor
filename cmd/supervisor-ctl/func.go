@@ -14,8 +14,8 @@ import (
 	"strings"
 )
 
-func getClient(ctx context.Context, host string) (client supervisor.SupervisorClient, err error) {
-	tlsCredentials, err := loadTLSCredentials()
+func getClient(ctx context.Context, host string, certFile string) (client supervisor.SupervisorClient, err error) {
+	tlsCredentials, err := loadTLSCredentials(certFile)
 	if err != nil {
 		logger.Error(err)
 		return client, errors.Wrap(err, "load cert failed")
@@ -53,9 +53,9 @@ func parseBlockSize(s string) (blockSize int64, err error) {
 	return
 }
 
-func loadTLSCredentials() (credentials.TransportCredentials, error) {
+func loadTLSCredentials(certFile string) (credentials.TransportCredentials, error) {
 	// Load certificate of the CA who signed server's certificate
-	pemServerCA, err := ioutil.ReadFile("cert/ca-cert.pem")
+	pemServerCA, err := ioutil.ReadFile(certFile)
 	if err != nil {
 		return nil, err
 	}

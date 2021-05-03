@@ -18,7 +18,7 @@ var stopCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithTimeout(context.Background(), supervisor.DefaultTimeout)
 		defer cancel()
-		client, err := getClient(ctx, stopFlag.Host)
+		client, err := getClient(ctx, stopFlag.Host, stopFlag.CertFile)
 		if err != nil {
 			logger.Error(err)
 			os.Exit(-1)
@@ -33,6 +33,7 @@ var stopCmd = &cobra.Command{
 
 func init() {
 	stopCmd.PersistentFlags().StringVar(&stopFlag.Host, "host", "127.0.0.1:50060", "host")
+	stopCmd.PersistentFlags().StringVar(&stopFlag.CertFile, "cert-file", "cert/ca-cert.pem", "cert file")
 	stopCmd.PersistentFlags().StringVar(&stopFlag.Name, "name", "", "service name")
 	rootCmd.AddCommand(stopCmd)
 }
