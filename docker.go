@@ -245,6 +245,8 @@ func (t *DockerClient) initImage(ctx context.Context, deployConfig DeployConfig,
 		if err != ErrNotFound {
 			return errors.Wrap(err, "find image failed,"+imageWithTag)
 		}
+	} else {
+		return nil // image is exists
 	}
 	for i := 0; i < int(deployConfig.PullRetryTimes); i++ {
 		reader, err := t.ImagePull(ctx, imageWithTag, types.ImagePullOptions{})
