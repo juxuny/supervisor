@@ -148,6 +148,11 @@ func (t *DockerClient) createProxyEnv(deployConfig DeployConfig) []string {
 }
 
 func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig, callback func(c container.ContainerCreateCreatedBody) error) (ID string, err error) {
+	fmt.Println("init proxy image: ", t.Config.ProxyImage)
+	err = t.initImage(ctx, deployConfig, t.Config.ProxyImage)
+	if err != nil {
+		return "", err
+	}
 	proxyContainerName := t.genProxyName(deployConfig)
 	// check running container
 	if list, err := t.findContainer(ctx, func(container types.Container) bool {
@@ -233,6 +238,32 @@ func (t *DockerClient) genSvcNameWithoutHash(deployConfig DeployConfig) string {
 	return strings.Join([]string{containerPrefix, ComponentSvc, deployConfig.Name}, "-")
 }
 
+func (t *DockerClient) initImage(ctx context.Context, deployConfig DeployConfig, imageWithTag string) error {
+	fmt.Println("check image:", imageWithTag)
+	_, err := t.findImage(ctx, imageWithTag)
+	if err != nil {
+		if err != ErrNotFound {
+			return errors.Wrap(err, "find image failed,"+imageWithTag)
+		}
+	}
+	for i := 0; i < int(deployConfig.PullRetryTimes); i++ {
+		reader, err := t.ImagePull(ctx, imageWithTag, types.ImagePullOptions{})
+		if err != nil {
+			panic(err)
+		}
+		_, _ = io.Copy(os.Stdout, reader)
+		if _, err := t.findImage(ctx, imageWithTag); err != nil {
+			if err != ErrNotFound {
+				return err
+			}
+		} else {
+			break
+		}
+		fmt.Println("retry:", i+1)
+	}
+	return nil
+}
+
 func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id string, err error) {
 	imageWithTag := deployConfig.Image + ":" + deployConfig.Tag
 	if deployConfig.PullRetryTimes <= 0 {
@@ -242,21 +273,9 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 	if err != nil {
 		return id, err
 	}
-	fmt.Println("pulling image:", imageWithTag)
-	for i := 0; i < int(deployConfig.PullRetryTimes); i++ {
-		reader, err := t.ImagePull(ctx, imageWithTag, types.ImagePullOptions{})
-		if err != nil {
-			panic(err)
-		}
-		_, _ = io.Copy(os.Stdout, reader)
-		if _, err := t.findImage(ctx, imageWithTag); err != nil {
-			if err != ErrNotFound {
-				return id, err
-			}
-		} else {
-			break
-		}
-		fmt.Println("retry:", i+1)
+	err = t.initImage(ctx, deployConfig, imageWithTag)
+	if err != nil {
+		return id, err
 	}
 	_, err = t.initProxy(ctx, deployConfig, func(c container.ContainerCreateCreatedBody) error {
 		return t.NetworkConnect(ctx, networkID, c.ID, nil)
