@@ -1,0 +1,5 @@
+supervisor:
+  proxy_image: "juxuny/supervisor:proxy-v0.0.1"
+  control_port: 50060
+  docker: unix://var/run/docker.sock
+  store_dir: tmp

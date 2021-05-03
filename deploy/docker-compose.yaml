@@ -7,7 +7,7 @@ services:
     volumes:
       - ../cert:/app/cert
       - ../tmp:/app/tmp
-      - ../config:/app/config
+      - ./config:/app/config
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "50060:50060"
