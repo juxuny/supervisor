@@ -1,0 +1,13 @@
+version: '3.4'
+
+services:
+  supervisord:
+    image: juxuny/supervisor:srv-v0.0.1
+    restart: always
+    volumes:
+      - ../cert:/app/cert
+      - ../tmp:/app/tmp
+      - ../config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "50060:50060"
