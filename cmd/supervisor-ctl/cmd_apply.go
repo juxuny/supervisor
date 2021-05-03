@@ -5,6 +5,7 @@ import (
 	"github.com/juxuny/supervisor"
 	"github.com/spf13/cobra"
 	"os"
+	"time"
 )
 
 var applyFlag = struct {
@@ -25,7 +26,7 @@ var applyCmd = &cobra.Command{
 			logger.Error(err)
 			os.Exit(-1)
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), supervisor.DefaultTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(applyFlag.Timeout)*time.Second)
 		defer cancel()
 		client, err := getClient(ctx, applyFlag.Host, applyFlag.CertFile)
 		if err != nil {
@@ -43,6 +44,7 @@ var applyCmd = &cobra.Command{
 
 func init() {
 	applyCmd.PersistentFlags().StringVar(&applyFlag.Host, "host", "127.0.0.1:50060", "host")
+	applyCmd.PersistentFlags().IntVar(&applyFlag.Timeout, "timeout", int(supervisor.DefaultTimeout/time.Second), "timeout")
 	applyCmd.PersistentFlags().StringVar(&applyFlag.CertFile, "cert-file", "cert/ca-cert.pem", "cert file")
 	applyCmd.PersistentFlags().StringVar(&applyFlag.File, "file", "", "deploy yaml")
 	rootCmd.AddCommand(applyCmd)

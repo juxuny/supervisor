@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"io"
 	"os"
+	"time"
 )
 
 var uploadFlag = struct {
@@ -62,7 +63,7 @@ var uploadCmd = &cobra.Command{
 					uploading = false
 					return
 				}
-				uploadCtx, uploadCancel := context.WithTimeout(context.Background(), supervisor.DefaultTimeout)
+				uploadCtx, uploadCancel := context.WithTimeout(context.Background(), time.Duration(uploadFlag.Timeout)*time.Second)
 				defer uploadCancel()
 				_, err = client.Upload(uploadCtx, &supervisor.UploadReq{
 					FileName:      uploadFlag.Name,
@@ -87,6 +88,7 @@ var uploadCmd = &cobra.Command{
 func init() {
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.Host, "host", "127.0.0.1:50060", "host")
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.CertFile, "cert-file", "cert/ca-cert.pem", "cert file")
+	uploadCmd.PersistentFlags().IntVar(&uploadFlag.Timeout, "timeout", int(supervisor.DefaultTimeout/time.Second), "timeout")
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.Name, "name", "", "file name")
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.FilePath, "file", "", "file to upload")
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.BlockSize, "blockSize", "1m", "upload block size")
