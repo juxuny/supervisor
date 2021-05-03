@@ -336,7 +336,9 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 		return resp.ID, err
 	}
 
-	proxyClient, err := createProxyControlClient(fmt.Sprintf("127.0.0.1:%d", deployConfig.ProxyPort+ControlPortOffset))
+	fmt.Println("creating proxy control client")
+	proxyContainerName := t.genProxyName(deployConfig)
+	proxyClient, err := createProxyControlClient(fmt.Sprintf("%s:%d", proxyContainerName, deployConfig.ProxyPort+ControlPortOffset))
 	if err != nil {
 		return "", err
 	}
@@ -441,7 +443,7 @@ func (t *DockerClient) parseMounts(deployConfig DeployConfig) []mount.Mount {
 	for _, m := range deployConfig.Mounts {
 		hostPath := m.HostPath
 		if strings.HasPrefix(hostPath, "./") || !strings.HasPrefix(hostPath, "/") {
-			wd, err := os.Getwd()
+			wd, err := getWd()
 			if err != nil {
 				fmt.Println(err)
 				continue

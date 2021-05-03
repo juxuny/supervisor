@@ -2,7 +2,12 @@ version: '3.4'
 
 services:
   supervisord:
-    image: juxuny/supervisor:srv-v0.0.2
+    environment:
+      HOST_PWD: ${PWD}
+#    image: juxuny/supervisor:srv-v0.0.2
+    build:
+      context: ../
+      dockerfile: supervisord.dockerfile
     restart: always
     volumes:
       - ../cert:/app/cert

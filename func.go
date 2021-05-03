@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"fmt"
+	"github.com/juxuny/env"
 	pb "github.com/juxuny/supervisor/proxy"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
@@ -68,6 +69,14 @@ func GetFileSize(fileName string) (size int64, err error) {
 	}
 	size = stat.Size()
 	return
+}
+
+func getWd() (string, error) {
+	pwd := env.GetString("HOST_PWD", "")
+	if pwd == "" {
+		return os.Getwd()
+	}
+	return pwd, nil
 }
 
 func GetFileHash(fileName string, hashType HashType) (ret string, err error) {
