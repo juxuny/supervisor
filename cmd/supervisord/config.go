@@ -12,5 +12,6 @@ func getDockerClientConfig() supervisor.DockerClientConfig {
 	if globalConfig.DockerHost != "" {
 		config.Host = globalConfig.DockerHost
 	}
+	config.HostIp = globalConfig.HostIp
 	return config
 }

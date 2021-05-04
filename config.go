@@ -21,6 +21,7 @@ type Config struct {
 	ControlPort int    `json:"control_port" yaml:"control_port"`
 	DockerHost  string `json:"docker_host" yaml:"docker_host"`
 	StoreDir    string `json:"store_dir" yaml:"store_dir"`
+	HostIp      string `json:"host_ip" yaml:"host_ip"`
 }
 
 func Parse(file string) (*ConfigWrapper, error) {

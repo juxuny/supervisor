@@ -42,12 +42,14 @@ func init() {
 type DockerClientConfig struct {
 	Host       string
 	ProxyImage string
+	HostIp     string // supervisord bind ip address
 }
 
 func NewDefaultDockerClientConfig() DockerClientConfig {
 	return DockerClientConfig{
 		Host:       "unix:///var/run/docker.sock",
 		ProxyImage: DefaultProxyImage,
+		HostIp:     "",
 	}
 }
 
@@ -196,7 +198,7 @@ func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig,
 	if err := callback(resp); err != nil {
 		return resp.ID, err
 	}
-	fmt.Println("started")
+	fmt.Println("started:", resp.ID)
 	return resp.ID, nil
 }
 
@@ -336,9 +338,8 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 		return resp.ID, err
 	}
 
-	fmt.Println("creating proxy control client")
-	proxyContainerName := t.genProxyName(deployConfig)
-	proxyClient, err := createProxyControlClient(fmt.Sprintf("%s:%d", proxyContainerName, deployConfig.ProxyPort+ControlPortOffset))
+	fmt.Println("creating proxy control client: ", t.Config.HostIp)
+	proxyClient, err := createProxyControlClient(fmt.Sprintf("%s:%d", t.Config.HostIp, deployConfig.ProxyPort+ControlPortOffset))
 	if err != nil {
 		return "", err
 	}
