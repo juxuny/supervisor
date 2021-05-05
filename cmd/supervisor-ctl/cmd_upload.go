@@ -93,7 +93,7 @@ func init() {
 	uploadCmd.PersistentFlags().IntVar(&uploadFlag.Timeout, "timeout", int(supervisor.DefaultTimeout/time.Second), "timeout")
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.Name, "name", "", "file name")
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.FilePath, "file", "", "file to upload")
-	uploadCmd.PersistentFlags().StringVar(&uploadFlag.BlockSize, "blockSize", "1m", "upload block size")
+	uploadCmd.PersistentFlags().StringVar(&uploadFlag.BlockSize, "block-size", "1m", "upload block size")
 	uploadCmd.PersistentFlags().BoolVar(&uploadFlag.Executable, "exec", false, "executable file")
 	rootCmd.AddCommand(uploadCmd)
 }
