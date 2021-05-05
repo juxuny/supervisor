@@ -27,6 +27,10 @@ const (
 	ControlPortOffset = 100
 )
 
+const (
+	ContainerStatusRunning = "running"
+)
+
 var (
 	ErrNotFound           = errors.New("not found")
 	ErrHealthCheckTimeout = errors.New("health check timeout")
@@ -164,10 +168,16 @@ func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig,
 			}
 		}
 		return false
-	}); err != nil {
+	}, true); err != nil {
 		return "", err
 	} else if len(list) > 0 {
-		return list[0].ID, nil
+		if list[0].State == ContainerStatusRunning {
+			return list[0].ID, nil
+		}
+		if err := t.ContainerRemove(ctx, list[0].ID, types.ContainerRemoveOptions{}); err != nil {
+			fmt.Printf("auto clean up proxy container '%s' failed\n", list[0].ID)
+			return "", err
+		}
 	}
 	resp, err := t.ContainerCreate(ctx, &container.Config{
 		Hostname:   proxyContainerName,
@@ -202,7 +212,7 @@ func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig,
 	return resp.ID, nil
 }
 
-func (t *DockerClient) findContainer(ctx context.Context, filter func(container types.Container) bool) ([]types.Container, error) {
+func (t *DockerClient) findContainer(ctx context.Context, filter func(container types.Container) bool, all bool) ([]types.Container, error) {
 	defaultFilter := func(c types.Container) bool {
 		for _, n := range c.Names {
 			if strings.HasPrefix(strings.Trim(n, "/"), containerPrefix) {
@@ -211,7 +221,7 @@ func (t *DockerClient) findContainer(ctx context.Context, filter func(container 
 		}
 		return false
 	}
-	list, err := t.ContainerList(ctx, types.ContainerListOptions{})
+	list, err := t.ContainerList(ctx, types.ContainerListOptions{All: all})
 	if err != nil {
 		return nil, err
 	}
@@ -297,16 +307,23 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 			}
 		}
 		return false
-	}); err != nil {
+	}, true); err != nil {
 		return "", err
 	} else if len(list) > 0 {
-		return list[0].ID, nil
+		fmt.Println("container ", containerName, " is ", list[0].State)
+		if list[0].State == ContainerStatusRunning {
+			return list[0].ID, nil
+		}
+		if err := t.ContainerRemove(ctx, list[0].ID, types.ContainerRemoveOptions{}); err != nil {
+			fmt.Printf("[check running container]auto remove container '%s' failed\n", list[0].ID)
+			return "", err
+		}
 	}
 	envs, err := t.parseEnv(deployConfig)
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("create svc")
+	fmt.Println("creating svc")
 	resp, err := t.ContainerCreate(ctx, &container.Config{
 		Hostname:   containerName,
 		Domainname: containerName,
@@ -329,10 +346,12 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 	if err != nil {
 		return "", errors.Wrap(err, "create container failed")
 	}
-	fmt.Println("start svc")
+	fmt.Println("created svc: ", resp.ID)
+	fmt.Println("starting svc")
 	if err := t.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		return "", errors.Wrap(err, "start container failed")
 	}
+	fmt.Println("started svc:", resp.ID)
 	fmt.Println("bind network")
 	if err := t.NetworkConnect(ctx, networkID, resp.ID, nil); err != nil {
 		return resp.ID, err
@@ -364,7 +383,7 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 			}
 		}
 		return true
-	})
+	}, false)
 	if err := t.stopRunningContainer(ctx, runningContainerList...); err != nil {
 		return "", err
 	}
@@ -506,12 +525,18 @@ func (t *DockerClient) FindProxyContainer(ctx context.Context, name string) (ret
 			}
 		}
 		return false
-	})
+	}, true)
 	if err != nil {
 		return nil, err
 	}
 	if len(list) == 0 {
 		return nil, ErrNotFound
 	}
-	return &list[0], nil
+	if list[0].State == ContainerStatusRunning {
+		return &list[0], nil
+	}
+	if err := t.ContainerRemove(ctx, list[0].ID, types.ContainerRemoveOptions{}); err != nil {
+		fmt.Printf("auto clean up exited container '%s' failed\n", list[0].ID)
+	}
+	return nil, ErrNotFound
 }
