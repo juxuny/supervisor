@@ -12,9 +12,10 @@ import (
 
 var uploadFlag = struct {
 	supervisor.BaseFlag
-	Name      string
-	FilePath  string
-	BlockSize string
+	Name       string
+	FilePath   string
+	BlockSize  string
+	Executable bool
 }{}
 
 var uploadCmd = &cobra.Command{
@@ -73,6 +74,7 @@ var uploadCmd = &cobra.Command{
 					BlockNum:      uint32(index),
 					BlockNumTotal: uint32(blockNum),
 					FileSize:      uint64(fileSize),
+					Executable:    uploadFlag.Executable,
 				})
 				if err != nil {
 					logger.Info(fmt.Sprintf("upload(%d/%d): failed, %v", index, blockNum, err))
@@ -92,5 +94,6 @@ func init() {
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.Name, "name", "", "file name")
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.FilePath, "file", "", "file to upload")
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.BlockSize, "blockSize", "1m", "upload block size")
+	uploadCmd.PersistentFlags().BoolVar(&uploadFlag.Executable, "exec", false, "executable file")
 	rootCmd.AddCommand(uploadCmd)
 }
