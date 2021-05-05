@@ -32,7 +32,7 @@ func Hash(v interface{}) string {
 		}
 		ft := tt.Field(i)
 		fv := vv.Field(i)
-		fmt.Println("hash: ", fv.Interface())
+		//fmt.Println("hash: ", fv.Interface())
 		h.Write([]byte(fmt.Sprintf("%s:%v\n", ft.Name, fv.Interface())))
 	}
 	//fmt.Println(tt.Kind(), vv.NumField())
