@@ -8,7 +8,8 @@ RUN cd /src/cmd/supervisor-ctl && CGO_ENABLED=0 go build -o supervisor-ctl
 FROM ineva/docker-envsubst:stable AS tools
 
 # final stage
-FROM ineva/alpine:3.9
+FROM docker:stable
+RUN apk add --update --no-cache libintl gettext ca-certificates
 WORKDIR /app
 COPY --from=builder /src/cmd/supervisor-ctl/supervisor-ctl /app/supervisor-ctl
 COPY --from=builder /src/cmd/proxy-ctl/proxy-ctl /app/proxy-ctl
