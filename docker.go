@@ -442,7 +442,7 @@ func (t *DockerClient) parseEnv(deployConfig DeployConfig) ([]string, error) {
 			k := l[:index]
 			v := l[index:]
 			k = strings.Trim(k, "\" =")
-			v = strings.Trim(v, "=\n\" ")
+			v = strings.Trim(v, "=\n\" '")
 			m[k] = v
 		}
 	}
