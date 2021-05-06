@@ -33,7 +33,7 @@ var applyCmd = &cobra.Command{
 			logger.Error(err)
 			os.Exit(-1)
 		}
-		resp, err := client.Apply(ctx, &supervisor.ApplyReq{Config: &dc})
+		resp, err := client.Apply(ctx, &supervisor.ApplyReq{Config: &dc, StopTimeout: int32(applyFlag.Timeout)})
 		if err != nil {
 			logger.Error(err)
 			os.Exit(-1)

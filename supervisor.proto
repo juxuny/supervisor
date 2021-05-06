@@ -20,6 +20,7 @@ message ProxyStatusReq {
 
 message ApplyReq {
   DeployConfig config = 1;
+  int32 stop_timeout = 2;
 }
 
 message ApplyResp {
