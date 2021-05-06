@@ -384,7 +384,12 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 		}
 		return true
 	}, false)
+	if len(runningContainerList) == 0 {
+		fmt.Println("running container count: ", len(runningContainerList))
+		return resp.ID, nil
+	}
 	if err := t.stopRunningContainer(ctx, runningContainerList...); err != nil {
+		fmt.Println(err)
 		return "", err
 	}
 	return resp.ID, nil
@@ -392,6 +397,7 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 
 func (t *DockerClient) stopRunningContainer(ctx context.Context, c ...types.Container) error {
 	for _, item := range c {
+		fmt.Println("stopping container: ", item.ID, item.Names)
 		if err := t.ContainerStop(ctx, item.ID, DefaultTimeoutPointer); err != nil {
 			return err
 		}
