@@ -78,6 +78,7 @@ var uploadCmd = &cobra.Command{
 				})
 				if err != nil {
 					logger.Info(fmt.Sprintf("upload(%d/%d): failed, %v", index, blockNum, err))
+					os.Exit(-1)
 				} else {
 					logger.Info(fmt.Sprintf("upload(%d/%d): success", index, blockNum))
 				}
