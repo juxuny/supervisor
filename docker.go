@@ -378,7 +378,7 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig, sto
 	fmt.Println("clean up old instances")
 	runningContainerList, err := t.findContainer(ctx, func(container types.Container) bool {
 		for _, n := range container.Names {
-			if strings.Trim(n, "/") == containerName || !strings.HasPrefix(n, "/"+t.genSvcNameWithoutHash(deployConfig)) {
+			if strings.Trim(n, "/") == containerName || TrimHashTail(strings.Trim(n, "/")) != t.genSvcNameWithoutHash(deployConfig) {
 				return false
 			}
 		}
@@ -415,7 +415,7 @@ func (t *DockerClient) Stop(ctx context.Context, name string) (int, error) {
 	count := 0
 	for _, c := range list {
 		for _, n := range c.Names {
-			if strings.HasPrefix(strings.Trim(n, "/"), proxyContainerNamePrefix) || strings.HasPrefix(strings.Trim(n, "/"), svcContainerNamePrefix) {
+			if TrimHashTail(strings.Trim(n, "/")) == proxyContainerNamePrefix || TrimHashTail(strings.Trim(n, "/")) == svcContainerNamePrefix {
 				fmt.Println("stop ", n)
 				if err := t.ContainerStop(ctx, c.ID, DefaultTimeoutPointer); err != nil {
 					return 0, err

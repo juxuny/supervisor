@@ -107,6 +107,17 @@ func GetFileHash(fileName string, hashType HashType) (ret string, err error) {
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
+func TrimHashTail(containerName string) string {
+	l := strings.Split(containerName, "-")
+	if len(l) == 0 {
+		return ""
+	}
+	if len(l[len(l)-1]) == 10 {
+		l = l[:(len(l) - 1)]
+	}
+	return strings.Join(l, "-")
+}
+
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
