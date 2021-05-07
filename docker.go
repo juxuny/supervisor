@@ -278,7 +278,7 @@ func (t *DockerClient) initImage(ctx context.Context, deployConfig DeployConfig,
 	return nil
 }
 
-func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig, stopTimeout time.Duration) (id string, err error) {
+func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id string, err error) {
 	imageWithTag := deployConfig.Image + ":" + deployConfig.Tag
 	if deployConfig.PullRetryTimes <= 0 {
 		deployConfig.PullRetryTimes = 3
@@ -388,17 +388,18 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig, sto
 		fmt.Println("running container count: ", len(runningContainerList))
 		return resp.ID, nil
 	}
-	if err := t.stopRunningContainer(ctx, stopTimeout, runningContainerList...); err != nil {
+	if err := t.killRunningContainer(ctx, runningContainerList...); err != nil {
 		fmt.Println(err)
 		return "", err
 	}
 	return resp.ID, nil
 }
 
-func (t *DockerClient) stopRunningContainer(ctx context.Context, stopTimeout time.Duration, c ...types.Container) error {
+func (t *DockerClient) killRunningContainer(ctx context.Context, c ...types.Container) error {
 	for _, item := range c {
-		fmt.Println("stopping container: ", item.ID, item.Names)
-		if err := t.ContainerStop(ctx, item.ID, &stopTimeout); err != nil {
+		fmt.Println("killing container: ", item.ID, item.Names)
+		if err := t.ContainerKill(ctx, item.ID, "KILL"); err != nil {
+			fmt.Println(err)
 			return err
 		}
 	}

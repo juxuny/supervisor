@@ -39,7 +39,6 @@ func touchDir(dir string) error {
 	} else {
 		return fmt.Errorf("path %s is not a director", dir)
 	}
-	return nil
 }
 
 func loadTLSCredentials() (credentials.TransportCredentials, error) {

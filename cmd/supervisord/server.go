@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc"
 	"os"
 	"path"
-	"time"
 )
 
 type server struct {
@@ -66,7 +65,7 @@ func (t *server) Apply(ctx context.Context, req *supervisor.ApplyReq) (resp *sup
 	if err != nil {
 		return nil, err
 	}
-	_, err = dockerClient.Apply(ctx, *req.Config, time.Duration(req.StopTimeout)*time.Second)
+	_, err = dockerClient.Apply(ctx, *req.Config)
 	if err != nil {
 		return nil, err
 	}
