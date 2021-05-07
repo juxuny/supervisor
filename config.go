@@ -22,6 +22,7 @@ type Config struct {
 	DockerHost  string `json:"docker_host" yaml:"docker_host"`
 	StoreDir    string `json:"store_dir" yaml:"store_dir"`
 	HostIp      string `json:"host_ip" yaml:"host_ip"`
+	CertFile    string `json:"cert_file" yaml:"cert_file"`
 }
 
 func Parse(file string) (*ConfigWrapper, error) {
@@ -42,6 +43,7 @@ func Init(config Config) error {
 	if config.StoreDir == "" {
 		return fmt.Errorf("store dir cannot be empty")
 	}
+	fmt.Println("store dir:", config.StoreDir)
 	if stat, err := os.Stat(config.StoreDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(config.StoreDir, 0776); err != nil {
 			return err
@@ -49,5 +51,6 @@ func Init(config Config) error {
 	} else if !stat.IsDir() {
 		return fmt.Errorf("%s is not a direcory", config.StoreDir)
 	}
+	fmt.Println("docker host:", config.DockerHost)
 	return nil
 }

@@ -43,7 +43,12 @@ func touchDir(dir string) error {
 
 func loadTLSCredentials() (credentials.TransportCredentials, error) {
 	// Load server's certificate and private key
-	serverCert, err := tls.LoadX509KeyPair("cert/server-cert.pem", "cert/server-key.pem")
+	certFile := globalConfig.CertFile
+	if certFile == "" {
+		certFile = "cert/server-cert.pem"
+	}
+	fmt.Println("cert file:", certFile)
+	serverCert, err := tls.LoadX509KeyPair(certFile, "cert/server-key.pem")
 	if err != nil {
 		return nil, err
 	}
