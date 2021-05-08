@@ -23,6 +23,7 @@ type Config struct {
 	StoreDir    string `json:"store_dir" yaml:"store_dir"`
 	HostIp      string `json:"host_ip" yaml:"host_ip"`
 	CertFile    string `json:"cert_file" yaml:"cert_file"`
+	CertKeyFile string `json:"cert_key_file" yaml:"cert_key_file"`
 }
 
 func Parse(file string) (*ConfigWrapper, error) {

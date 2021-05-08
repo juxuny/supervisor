@@ -41,6 +41,8 @@ supervisor:
   control_port: 50060
   docker_host: unix:///var/run/docker.sock
   store_dir: tmp
+  cert_file: "cert/server-cert.pem"
+  cert_key_file: "cert/server-key.pem"
 ```
 
 2. tmp/deploy-web.yaml

@@ -48,7 +48,12 @@ func loadTLSCredentials() (credentials.TransportCredentials, error) {
 		certFile = "cert/server-cert.pem"
 	}
 	fmt.Println("cert file:", certFile)
-	serverCert, err := tls.LoadX509KeyPair(certFile, "cert/server-key.pem")
+	certKeyFile := globalConfig.CertKeyFile
+	if certKeyFile == "" {
+		certKeyFile = "cert/server-key.pem"
+	}
+	fmt.Println("cert key file:", certKeyFile)
+	serverCert, err := tls.LoadX509KeyPair(certFile, certKeyFile)
 	if err != nil {
 		return nil, err
 	}
