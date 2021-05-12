@@ -2,12 +2,13 @@ package proxy
 
 import (
 	"fmt"
-	"io"
 	"net"
 	"runtime/debug"
 	"sync"
 	"time"
 )
+
+const BlockSize = 10 * (1 << 20) // 10M
 
 type IServer interface {
 	Start()
@@ -79,15 +80,32 @@ func (t *Server) serveClient(conn net.Conn) {
 		return
 	}
 	go func() {
-		_, err := io.Copy(conn, remoteConn)
-		if err != nil {
-			fmt.Println(err)
-			return
+		buf := make([]byte, BlockSize)
+		for {
+			n, err := conn.Read(buf)
+			if err != nil {
+				_ = remoteConn.Close()
+				return
+			}
+			_, err = remoteConn.Write(buf[:n])
+			if err != nil {
+				_ = conn.Close()
+				return
+			}
 		}
 	}()
-	_, err = io.Copy(remoteConn, conn)
-	if err != nil {
-		fmt.Println(err)
+	buf := make([]byte, BlockSize)
+	for {
+		n, err := remoteConn.Read(buf)
+		if err != nil {
+			_ = conn.Close()
+			return
+		}
+		_, err = conn.Write(buf[:n])
+		if err != nil {
+			_ = remoteConn.Close()
+			return
+		}
 	}
 }
 
