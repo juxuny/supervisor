@@ -43,13 +43,18 @@ func (s *server) Check(ctx context.Context, req *pb.CheckReq) (*pb.CheckResp, er
 	var resp pb.CheckResp
 	var checkErr error
 	if req.Type == pb.HealthCheckType_TypeDefault {
-		checkErr = checkHttp(fmt.Sprintf("http://%s:%d%s", req.Host, req.Port, req.Path))
+		u := fmt.Sprintf("http://%s:%d%s", req.Host, req.Port, req.Path)
+		fmt.Println("checking:", u)
+		checkErr = checkHttp(u)
 	} else if req.Type == pb.HealthCheckType_TypeTcp {
-		checkErr = checkTcp(fmt.Sprintf("%s:%d", req.Host, req.Port))
+		u := fmt.Sprintf("%s:%d", req.Host, req.Port)
+		fmt.Println("checking:", u)
+		checkErr = checkTcp(u)
 	} else {
 		return nil, errors.Errorf("unknown HealthCheckType:%v", req.Type)
 	}
 	if checkErr != nil {
+		fmt.Println(checkErr)
 		return nil, checkErr
 	}
 	resp.Code = 0

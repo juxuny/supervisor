@@ -491,6 +491,11 @@ func (t *DockerClient) HealthCheck(ctx context.Context, client proxy.ProxyClient
 		return fmt.Errorf("health check config is empty(nil)")
 	}
 	svcContainerName := t.genSvcName(deployConfig)
+	schema := "http"
+	if deployConfig.HealthCheck.Type == proxy.HealthCheckType_TypeTcp {
+		schema = "tcp"
+	}
+	fmt.Println("checking ", fmt.Sprintf("%s://%s:%d%s", schema, svcContainerName, deployConfig.HealthCheck.Port, deployConfig.HealthCheck.Path))
 	_, err := client.Check(ctx, &proxy.CheckReq{
 		Type: deployConfig.HealthCheck.Type,
 		Host: svcContainerName,

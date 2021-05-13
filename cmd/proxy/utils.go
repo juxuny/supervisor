@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"net"
@@ -27,8 +28,9 @@ func checkHttp(u string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(resp.StatusCode)
 	if resp.StatusCode != http.StatusOK {
-		return errors.Wrapf(err, "wrong http status code: %d", resp.StatusCode)
+		return errors.Errorf("wrong http status code: %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 	_, _ = ioutil.ReadAll(resp.Body)
