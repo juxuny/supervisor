@@ -33,6 +33,7 @@ func main() {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		logger.Error("failed to listen:", err)
+		os.Exit(-1)
 	}
 	defer func() {
 		if err := ln.Close(); err != nil {
