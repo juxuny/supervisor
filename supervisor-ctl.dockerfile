@@ -9,7 +9,7 @@ RUN cd /src/cmd/supervisor-ctl && CGO_ENABLED=0 go build -o supervisor-ctl
 
 # final stage
 FROM docker:stable
-RUN apk add --update --no-cache libintl gettext ca-certificates
+RUN apk add --update --no-cache libintl gettext ca-certificates && apk add --no-cache ca-certificates tzdata && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 WORKDIR /app
 ENV PATH="/app:${PATH}"
 COPY --from=builder /src/cmd/supervisor-ctl/supervisor-ctl /app/supervisor-ctl
