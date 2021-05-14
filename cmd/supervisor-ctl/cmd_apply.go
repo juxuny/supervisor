@@ -42,6 +42,7 @@ var applyCmd = &cobra.Command{
 }
 
 func init() {
+	initBaseFlag(applyCmd)
 	applyCmd.PersistentFlags().StringVar(&applyFlag.File, "file", "", "deploy yaml")
 	rootCmd.AddCommand(applyCmd)
 }
