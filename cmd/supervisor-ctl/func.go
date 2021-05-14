@@ -7,12 +7,28 @@ import (
 	"fmt"
 	"github.com/juxuny/supervisor"
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
+	"time"
 )
+
+var baseFlag supervisor.BaseFlag
+
+func initBaseFlag(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVar(&baseFlag.Host, "host", "127.0.0.1:50060", "supervisord host")
+	cmd.PersistentFlags().StringVar(&baseFlag.CertFile, "cert-file", "cert/ca-cert.pem", "ca-cert.pem")
+	cmd.PersistentFlags().IntVar(&baseFlag.Timeout, "timeout", int(supervisor.DefaultTimeout/time.Second), "timeout in seconds")
+}
+
+func Fatal(v ...interface{}) {
+	fmt.Println(v...)
+	os.Exit(-1)
+}
 
 func getClient(ctx context.Context, host string, certFile string) (client supervisor.SupervisorClient, err error) {
 	tlsCredentials, err := loadTLSCredentials(certFile)

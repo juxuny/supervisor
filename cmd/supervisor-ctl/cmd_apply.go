@@ -9,7 +9,6 @@ import (
 )
 
 var applyFlag = struct {
-	supervisor.BaseFlag
 	File string
 }{}
 
@@ -26,9 +25,9 @@ var applyCmd = &cobra.Command{
 			logger.Error(err)
 			os.Exit(-1)
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(applyFlag.Timeout)*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(baseFlag.Timeout)*time.Second)
 		defer cancel()
-		client, err := getClient(ctx, applyFlag.Host, applyFlag.CertFile)
+		client, err := getClient(ctx, baseFlag.Host, baseFlag.CertFile)
 		if err != nil {
 			logger.Error(err)
 			os.Exit(-1)
@@ -43,9 +42,6 @@ var applyCmd = &cobra.Command{
 }
 
 func init() {
-	applyCmd.PersistentFlags().StringVar(&applyFlag.Host, "host", "127.0.0.1:50060", "host")
-	applyCmd.PersistentFlags().IntVar(&applyFlag.Timeout, "timeout", int(supervisor.DefaultTimeout/time.Second), "timeout")
-	applyCmd.PersistentFlags().StringVar(&applyFlag.CertFile, "cert-file", "cert/ca-cert.pem", "cert file")
 	applyCmd.PersistentFlags().StringVar(&applyFlag.File, "file", "", "deploy yaml")
 	rootCmd.AddCommand(applyCmd)
 }

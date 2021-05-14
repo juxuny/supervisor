@@ -11,7 +11,6 @@ import (
 )
 
 var uploadFlag = struct {
-	supervisor.BaseFlag
 	Name       string
 	FilePath   string
 	BlockSize  string
@@ -22,6 +21,14 @@ var uploadCmd = &cobra.Command{
 	Use:   "upload",
 	Short: "upload",
 	Run: func(cmd *cobra.Command, args []string) {
+		if uploadFlag.Name == "" {
+			fmt.Println("name cannot be empty")
+			os.Exit(-1)
+		}
+		if uploadFlag.FilePath == "" {
+			fmt.Println("file cannot be empty")
+			os.Exit(-1)
+		}
 		blockSize, err := parseBlockSize(uploadFlag.BlockSize)
 		if err != nil {
 			logger.Error(err)
@@ -44,7 +51,7 @@ var uploadCmd = &cobra.Command{
 		logger.Info("block num: ", blockNum, " block size:", uploadFlag.BlockSize, " file hash:", fileHash)
 		ctx, cancel := context.WithTimeout(context.Background(), supervisor.DefaultTimeout)
 		defer cancel()
-		client, err := getClient(ctx, uploadFlag.Host, uploadFlag.CertFile)
+		client, err := getClient(ctx, baseFlag.Host, baseFlag.CertFile)
 		if err != nil {
 			logger.Error(err)
 			os.Exit(-1)
@@ -64,7 +71,7 @@ var uploadCmd = &cobra.Command{
 					uploading = false
 					return
 				}
-				uploadCtx, uploadCancel := context.WithTimeout(context.Background(), time.Duration(uploadFlag.Timeout)*time.Second)
+				uploadCtx, uploadCancel := context.WithTimeout(context.Background(), time.Duration(baseFlag.Timeout)*time.Second)
 				defer uploadCancel()
 				_, err = client.Upload(uploadCtx, &supervisor.UploadReq{
 					FileName:      uploadFlag.Name,
@@ -89,9 +96,7 @@ var uploadCmd = &cobra.Command{
 }
 
 func init() {
-	uploadCmd.PersistentFlags().StringVar(&uploadFlag.Host, "host", "127.0.0.1:50060", "host")
-	uploadCmd.PersistentFlags().StringVar(&uploadFlag.CertFile, "cert-file", "cert/ca-cert.pem", "cert file")
-	uploadCmd.PersistentFlags().IntVar(&uploadFlag.Timeout, "timeout", int(supervisor.DefaultTimeout/time.Second), "timeout")
+	initBaseFlag(uploadCmd)
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.Name, "name", "", "file name")
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.FilePath, "file", "", "file to upload")
 	uploadCmd.PersistentFlags().StringVar(&uploadFlag.BlockSize, "block-size", "1m", "upload block size")

@@ -9,7 +9,6 @@ import (
 )
 
 var stopFlag = struct {
-	supervisor.BaseFlag
 	Name string
 }{}
 
@@ -17,9 +16,12 @@ var stopCmd = &cobra.Command{
 	Use:   "stop",
 	Short: "stop",
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(stopFlag.Timeout)*time.Second)
+		if stopFlag.Name == "" {
+			Fatal("name cannot be empty")
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(baseFlag.Timeout)*time.Second)
 		defer cancel()
-		client, err := getClient(ctx, stopFlag.Host, stopFlag.CertFile)
+		client, err := getClient(ctx, baseFlag.Host, baseFlag.CertFile)
 		if err != nil {
 			logger.Error(err)
 			os.Exit(-1)
@@ -29,13 +31,12 @@ var stopCmd = &cobra.Command{
 			logger.Error(err)
 			os.Exit(-1)
 		}
+		logger.Println("stop ", stopFlag.Name, " success")
 	},
 }
 
 func init() {
-	stopCmd.PersistentFlags().StringVar(&stopFlag.Host, "host", "127.0.0.1:50060", "host")
-	stopCmd.PersistentFlags().IntVar(&stopFlag.Timeout, "timeout", int(supervisor.DefaultTimeout/time.Second), "timeout")
-	stopCmd.PersistentFlags().StringVar(&stopFlag.CertFile, "cert-file", "cert/ca-cert.pem", "cert file")
+	initBaseFlag(stopCmd)
 	stopCmd.PersistentFlags().StringVar(&stopFlag.Name, "name", "", "service name")
 	rootCmd.AddCommand(stopCmd)
 }
