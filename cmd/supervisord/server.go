@@ -92,6 +92,9 @@ func (t *server) Stop(ctx context.Context, req *supervisor.StopReq) (resp *super
 }
 
 func (t *server) Upload(ctx context.Context, req *supervisor.UploadReq) (resp *supervisor.UploadResp, err error) {
+	if req.FileName == "" {
+		return nil, fmt.Errorf("file name cannot be empty")
+	}
 	uploadDir := path.Join(globalConfig.StoreDir, DefaultUploadDir)
 	if err := touchDir(uploadDir); err != nil {
 		logger.Error(err)
