@@ -18,7 +18,7 @@ var uploadMultipleFlag = struct {
 	Executable bool
 }{}
 
-func uploadFile(local, remoteName string, blockSize int64) (err error) {
+func uploadFile(host, local, remoteName string, blockSize int64) (err error) {
 	fileSize, err := supervisor.GetFileSize(local)
 	if err != nil {
 		logger.Error(err)
@@ -36,7 +36,7 @@ func uploadFile(local, remoteName string, blockSize int64) (err error) {
 	logger.Info("block num: ", blockNum, " block size:", uploadMultipleFlag.BlockSize, " file hash:", fileHash)
 	ctx, cancel := context.WithTimeout(context.Background(), supervisor.DefaultTimeout)
 	defer cancel()
-	client, err := getClient(ctx, baseFlag.Host, baseFlag.CertFile)
+	client, err := getClient(ctx, host, baseFlag.CertFile)
 	if err != nil {
 		logger.Error(err)
 		os.Exit(-1)
@@ -103,17 +103,21 @@ var uploadMultipleCmd = &cobra.Command{
 			Fatal(err)
 		}
 		wg := sync.WaitGroup{}
-		for local, remote := range m {
-			wg.Add(1)
-			go func(local, remoteName string, blockSize int64) {
-				defer func() {
-					wg.Done()
-				}()
-				if err := uploadFile(local, remoteName, blockSize); err != nil {
-					logger.Error(err)
-					return
+		for _, host := range baseFlag.Host {
+			func() {
+				for local, remote := range m {
+					wg.Add(1)
+					go func(local, remoteName string, blockSize int64) {
+						defer func() {
+							wg.Done()
+						}()
+						if err := uploadFile(host, local, remoteName, blockSize); err != nil {
+							logger.Error(err)
+							return
+						}
+					}(local, remote, blockSize)
 				}
-			}(local, remote, blockSize)
+			}()
 		}
 		wg.Wait()
 		logger.Info("upload finished")

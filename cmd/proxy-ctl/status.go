@@ -17,7 +17,11 @@ func checkStatus() {
 	fmt.Println("check status...")
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	defer cancel()
-	client, err := getClient(statusFlag.Host)
+	if len(statusFlag.Host) == 0 {
+		fmt.Println("missing --host")
+		os.Exit(-1)
+	}
+	client, err := getClient(statusFlag.Host[0])
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(-1)
@@ -40,6 +44,6 @@ var statusCmd = &cobra.Command{
 }
 
 func init() {
-	statusCmd.PersistentFlags().StringVar(&statusFlag.Host, "host", "127.0.0.1:50050", "host")
+	statusCmd.PersistentFlags().StringSliceVar(&statusFlag.Host, "host", []string{"127.0.0.1:50050"}, "host")
 	rootCmd.AddCommand(statusCmd)
 }

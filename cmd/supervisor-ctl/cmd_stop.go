@@ -19,19 +19,26 @@ var stopCmd = &cobra.Command{
 		if stopFlag.Name == "" {
 			Fatal("name cannot be empty")
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(baseFlag.Timeout)*time.Second)
-		defer cancel()
-		client, err := getClient(ctx, baseFlag.Host, baseFlag.CertFile)
-		if err != nil {
-			logger.Error(err)
-			os.Exit(-1)
+		if len(baseFlag.Host) == 0 {
+			Fatal("missing --host")
 		}
-		_, err = client.Stop(ctx, &supervisor.StopReq{Name: stopFlag.Name})
-		if err != nil {
-			logger.Error(err)
-			os.Exit(-1)
+		for _, h := range baseFlag.Host {
+			func() {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(baseFlag.Timeout)*time.Second)
+				defer cancel()
+				client, err := getClient(ctx, h, baseFlag.CertFile)
+				if err != nil {
+					logger.Error(err)
+					os.Exit(-1)
+				}
+				_, err = client.Stop(ctx, &supervisor.StopReq{Name: stopFlag.Name})
+				if err != nil {
+					logger.Error(err)
+					os.Exit(-1)
+				}
+				logger.Println("stop ", stopFlag.Name, " success")
+			}()
 		}
-		logger.Println("stop ", stopFlag.Name, " success")
 	},
 }
 

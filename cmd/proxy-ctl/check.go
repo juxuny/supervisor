@@ -24,7 +24,11 @@ var checkCmd = &cobra.Command{
 		fmt.Println("health check")
 		ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 		defer cancel()
-		client, err := getClient(statusFlag.Host)
+		if len(checkFlag.Host) == 0 {
+			fmt.Println("missing --host")
+			os.Exit(-1)
+		}
+		client, err := getClient(checkFlag.Host[0])
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(-1)
@@ -48,6 +52,6 @@ func init() {
 	checkCmd.PersistentFlags().StringVar(&checkFlag.Path, "path", "/healthz", "health check path")
 	checkCmd.PersistentFlags().StringVar(&checkFlag.Remote, "remote", "127.0.0.1", "service address")
 	checkCmd.PersistentFlags().IntVar(&checkFlag.Type, "type", 0, "0=http, 1=tcp, default=0")
-	checkCmd.PersistentFlags().StringVar(&checkFlag.Host, "host", "127.0.0.1:50050", "host")
+	checkCmd.PersistentFlags().StringSliceVar(&checkFlag.Host, "host", []string{"127.0.0.1:50050"}, "host")
 	rootCmd.AddCommand(checkCmd)
 }

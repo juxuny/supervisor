@@ -49,47 +49,53 @@ var uploadCmd = &cobra.Command{
 			os.Exit(-1)
 		}
 		logger.Info("block num: ", blockNum, " block size:", uploadFlag.BlockSize, " file hash:", fileHash)
-		ctx, cancel := context.WithTimeout(context.Background(), supervisor.DefaultTimeout)
-		defer cancel()
-		client, err := getClient(ctx, baseFlag.Host, baseFlag.CertFile)
-		if err != nil {
-			logger.Error(err)
-			os.Exit(-1)
-		}
-		f, err := os.Open(uploadFlag.FilePath)
-		if err != nil {
-			logger.Error(err)
-			os.Exit(-1)
-		}
-		buf := make([]byte, blockSize)
-		uploading := true
-		index := 1
-		for uploading {
+		for _, host := range baseFlag.Host {
 			func() {
-				n, err := f.Read(buf)
-				if err == io.EOF {
-					uploading = false
-					return
-				}
-				uploadCtx, uploadCancel := context.WithTimeout(context.Background(), time.Duration(baseFlag.Timeout)*time.Second)
-				defer uploadCancel()
-				_, err = client.Upload(uploadCtx, &supervisor.UploadReq{
-					FileName:      uploadFlag.Name,
-					FileHash:      fileHash,
-					HashType:      supervisor.HashType_Sha256,
-					Data:          buf[:n],
-					BlockNum:      uint32(index),
-					BlockNumTotal: uint32(blockNum),
-					FileSize:      uint64(fileSize),
-					Executable:    uploadFlag.Executable,
-				})
+
+				ctx, cancel := context.WithTimeout(context.Background(), supervisor.DefaultTimeout)
+				defer cancel()
+				client, err := getClient(ctx, host, baseFlag.CertFile)
 				if err != nil {
-					logger.Info(fmt.Sprintf("upload(%d/%d): failed, %v", index, blockNum, err))
+					logger.Error(err)
 					os.Exit(-1)
-				} else {
-					logger.Info(fmt.Sprintf("upload(%d/%d): success", index, blockNum))
 				}
-				index += 1
+				f, err := os.Open(uploadFlag.FilePath)
+				if err != nil {
+					logger.Error(err)
+					os.Exit(-1)
+				}
+				defer f.Close()
+				buf := make([]byte, blockSize)
+				uploading := true
+				index := 1
+				for uploading {
+					func() {
+						n, err := f.Read(buf)
+						if err == io.EOF {
+							uploading = false
+							return
+						}
+						uploadCtx, uploadCancel := context.WithTimeout(context.Background(), time.Duration(baseFlag.Timeout)*time.Second)
+						defer uploadCancel()
+						_, err = client.Upload(uploadCtx, &supervisor.UploadReq{
+							FileName:      uploadFlag.Name,
+							FileHash:      fileHash,
+							HashType:      supervisor.HashType_Sha256,
+							Data:          buf[:n],
+							BlockNum:      uint32(index),
+							BlockNumTotal: uint32(blockNum),
+							FileSize:      uint64(fileSize),
+							Executable:    uploadFlag.Executable,
+						})
+						if err != nil {
+							logger.Info(fmt.Sprintf("upload(%d/%d): failed, %v", index, blockNum, err))
+							os.Exit(-1)
+						} else {
+							logger.Info(fmt.Sprintf("upload(%d/%d): success", index, blockNum))
+						}
+						index += 1
+					}()
+				}
 			}()
 		}
 	},

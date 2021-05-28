@@ -20,7 +20,7 @@ import (
 var baseFlag supervisor.BaseFlag
 
 func initBaseFlag(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&baseFlag.Host, "host", "127.0.0.1:50060", "supervisord host")
+	cmd.PersistentFlags().StringSliceVar(&baseFlag.Host, "host", []string{"127.0.0.1:50060"}, "supervisord host")
 	cmd.PersistentFlags().StringVar(&baseFlag.CertFile, "cert-file", "cert/ca-cert.pem", "ca-cert.pem")
 	cmd.PersistentFlags().IntVar(&baseFlag.Timeout, "timeout", int(supervisor.DefaultTimeout/time.Second), "timeout in seconds")
 }
