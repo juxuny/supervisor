@@ -189,6 +189,7 @@ func (t *DockerClient) initProxy(ctx context.Context, deployConfig DeployConfig,
 		},
 		Env: t.createProxyEnv(deployConfig),
 	}, &container.HostConfig{
+		AutoRemove:    deployConfig.Restart == "" || deployConfig.Restart == "no",
 		RestartPolicy: container.RestartPolicy{Name: deployConfig.Restart},
 		PortBindings: nat.PortMap{
 			nat.Port(fmt.Sprintf("%d", deployConfig.ProxyPort)): []nat.PortBinding{
