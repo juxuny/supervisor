@@ -102,8 +102,8 @@ var uploadMultipleCmd = &cobra.Command{
 		if err != nil {
 			Fatal(err)
 		}
-		wg := sync.WaitGroup{}
 		for _, host := range baseFlag.Host {
+			wg := sync.WaitGroup{}
 			func() {
 				for local, remote := range m {
 					wg.Add(1)
@@ -118,8 +118,8 @@ var uploadMultipleCmd = &cobra.Command{
 					}(local, remote, blockSize)
 				}
 			}()
+			wg.Wait()
 		}
-		wg.Wait()
 		logger.Info("upload finished")
 	},
 }

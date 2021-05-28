@@ -21,37 +21,36 @@ var uploadCmd = &cobra.Command{
 	Use:   "upload",
 	Short: "upload",
 	Run: func(cmd *cobra.Command, args []string) {
-		if uploadFlag.Name == "" {
-			fmt.Println("name cannot be empty")
-			os.Exit(-1)
-		}
-		if uploadFlag.FilePath == "" {
-			fmt.Println("file cannot be empty")
-			os.Exit(-1)
-		}
-		blockSize, err := parseBlockSize(uploadFlag.BlockSize)
-		if err != nil {
-			logger.Error(err)
-			os.Exit(-1)
-		}
-		fileSize, err := supervisor.GetFileSize(uploadFlag.FilePath)
-		if err != nil {
-			logger.Error(err)
-			os.Exit(-1)
-		}
-		blockNum := fileSize / blockSize
-		if fileSize%blockSize > 0 {
-			blockNum += 1
-		}
-		fileHash, err := supervisor.GetFileHash(uploadFlag.FilePath, supervisor.HashType_Sha256)
-		if err != nil {
-			logger.Error(err)
-			os.Exit(-1)
-		}
-		logger.Info("block num: ", blockNum, " block size:", uploadFlag.BlockSize, " file hash:", fileHash)
 		for _, host := range baseFlag.Host {
 			func() {
-
+				if uploadFlag.Name == "" {
+					fmt.Println("name cannot be empty")
+					os.Exit(-1)
+				}
+				if uploadFlag.FilePath == "" {
+					fmt.Println("file cannot be empty")
+					os.Exit(-1)
+				}
+				blockSize, err := parseBlockSize(uploadFlag.BlockSize)
+				if err != nil {
+					logger.Error(err)
+					os.Exit(-1)
+				}
+				fileSize, err := supervisor.GetFileSize(uploadFlag.FilePath)
+				if err != nil {
+					logger.Error(err)
+					os.Exit(-1)
+				}
+				blockNum := fileSize / blockSize
+				if fileSize%blockSize > 0 {
+					blockNum += 1
+				}
+				fileHash, err := supervisor.GetFileHash(uploadFlag.FilePath, supervisor.HashType_Sha256)
+				if err != nil {
+					logger.Error(err)
+					os.Exit(-1)
+				}
+				logger.Info("block num: ", blockNum, " block size:", uploadFlag.BlockSize, " file hash:", fileHash)
 				ctx, cancel := context.WithTimeout(context.Background(), supervisor.DefaultTimeout)
 				defer cancel()
 				client, err := getClient(ctx, host, baseFlag.CertFile)
