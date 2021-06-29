@@ -78,7 +78,7 @@ func main() {
 		proxyConfig = &pb.Config{Proxy: pb.Proxy{
 			ControlPort: uint32(env.GetInt("CONTROL_PORT", 50050)),
 			ListenPort:  uint32(env.GetInt("LISTEN_PORT", 8888)),
-			Remote:      env.GetString("REMOTE", "127.0.0.1:8080"),
+			Remote:      env.GetString("REMOTE", ""),
 		}}
 	} else {
 		proxyConfig, err = pb.Parse(configFile)
@@ -87,10 +87,17 @@ func main() {
 			return
 		}
 	}
+	if proxyConfig.Proxy.Remote == "" {
+		proxyConfig.Proxy.Remote, err = pb.GetRemoteFromFile(int(proxyConfig.Proxy.ControlPort))
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
 	proxyServer = pb.NewServer(proxyConfig.Proxy)
 	go proxyServer.Start()
 	addr := fmt.Sprintf(":%d", int(proxyConfig.Proxy.ControlPort))
 	fmt.Println("listen ", addr)
+	fmt.Println("remote ", proxyConfig.Proxy.Remote)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)

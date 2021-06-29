@@ -2,8 +2,13 @@ package proxy
 
 import (
 	"fmt"
+	"github.com/juxuny/env"
+	"github.com/pkg/errors"
+	"io/ioutil"
 	"net"
+	"path"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"time"
 )
@@ -47,6 +52,9 @@ func (t *Server) UpdateRemote(remote string) error {
 	t.Lock()
 	defer t.Unlock()
 	t.proxy.Remote = remote
+	if err := SaveRemote(int(t.proxy.ControlPort), remote); err != nil {
+		fmt.Println(err)
+	}
 	return nil
 }
 
@@ -114,4 +122,28 @@ func (t *Server) Status() (ret *Status, err error) {
 	ret.ListenPort = t.proxy.ListenPort
 	ret.Remote = t.proxy.Remote
 	return
+}
+
+var fileLock = &sync.Mutex{}
+var dataDir = env.GetString("DATA_DIR", "/data")
+
+func SaveRemote(controlPort int, remote string) error {
+	fileLock.Lock()
+	defer fileLock.Unlock()
+	fileName := path.Join(dataDir, fmt.Sprintf("%d.remote", controlPort))
+	if err := ioutil.WriteFile(fileName, []byte(remote), 0666); err != nil {
+		return errors.Wrap(err, "save remote failed")
+	}
+	return nil
+}
+
+func GetRemoteFromFile(controlPort int) (remote string, err error) {
+	fileLock.Lock()
+	defer fileLock.Unlock()
+	fileName := path.Join(dataDir, fmt.Sprintf("%d.remote", controlPort))
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return "", errors.Wrap(err, "read remote config failed")
+	}
+	return strings.Trim(string(data), " \r\n\t"), nil
 }
