@@ -284,20 +284,32 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 	if deployConfig.PullRetryTimes <= 0 {
 		deployConfig.PullRetryTimes = 3
 	}
-	networkID, err := t.initNetwork(ctx, deployConfig)
+	//networkID, err := t.initNetwork(ctx, deployConfig)
+	//if err != nil {
+	//	return id, err
+	//}
+	networkName := strings.Join([]string{containerPrefix, "network", deployConfig.Name}, "-")
+	fmt.Println("check network:", networkName)
+	networkResource, found, err := t.findNetwork(ctx, func(item types.NetworkResource) bool {
+		return item.Name == networkName
+	})
 	if err != nil {
-		return id, err
+		return "", err
+	}
+	if !found {
+		return "", errors.Wrapf(err, "network not found: %s", networkName)
 	}
 	err = t.initImage(ctx, deployConfig, imageWithTag)
 	if err != nil {
 		return id, err
 	}
-	_, err = t.initProxy(ctx, deployConfig, func(c container.ContainerCreateCreatedBody) error {
-		return t.NetworkConnect(ctx, networkID, c.ID, nil)
-	})
-	if err != nil {
-		return "", err
-	}
+	networkID := networkResource.ID
+	//_, err = t.initProxy(ctx, deployConfig, func(c container.ContainerCreateCreatedBody) error {
+	//	return t.NetworkConnect(ctx, networkID, c.ID, nil)
+	//})
+	//if err != nil {
+	//	return "", err
+	//}
 
 	containerName := t.genSvcName(deployConfig)
 	// check running container
@@ -358,7 +370,7 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 		return resp.ID, err
 	}
 
-	fmt.Println("creating proxy control client: ", t.Config.HostIp)
+	fmt.Println("creating proxy control client: ", t.Config.HostIp, deployConfig.ProxyPort+ControlPortOffset)
 	proxyClient, err := createProxyControlClient(fmt.Sprintf("%s:%d", t.Config.HostIp, deployConfig.ProxyPort+ControlPortOffset))
 	if err != nil {
 		return "", err
