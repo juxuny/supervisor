@@ -411,7 +411,7 @@ func (t *DockerClient) Apply(ctx context.Context, deployConfig DeployConfig) (id
 func (t *DockerClient) killRunningContainer(ctx context.Context, c ...types.Container) error {
 	for _, item := range c {
 		fmt.Println("killing container: ", item.ID, item.Names)
-		if err := t.ContainerKill(ctx, item.ID, "KILL"); err != nil {
+		if err := t.ContainerKill(ctx, item.ID, "SIGHUP"); err != nil {
 			fmt.Println(err)
 			return err
 		}
