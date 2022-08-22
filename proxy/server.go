@@ -90,6 +90,7 @@ func (t *Server) serveClient(conn net.Conn) {
 	go func() {
 		buf := make([]byte, BlockSize)
 		for {
+			_ = conn.SetReadDeadline(time.Now().Add(time.Second * 5))
 			n, err := conn.Read(buf)
 			if err != nil {
 				_ = remoteConn.Close()

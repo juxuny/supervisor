@@ -37,7 +37,7 @@ openssl x509 -in server-cert.pem -noout -text
 1. config/supervisor.yaml
 ```yaml
 supervisor:
-  proxy_image: "juxuny/supervisor:proxy-v0.0.1"
+  proxy_image: "juxuny/supervisor:proxy-v0.1.1"
   control_port: 50060
   docker_host: unix:///var/run/docker.sock
   store_dir: tmp
