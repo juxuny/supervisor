@@ -90,7 +90,9 @@ func (t *Server) serveClient(conn net.Conn) {
 	go func() {
 		buf := make([]byte, BlockSize)
 		for {
-			_ = conn.SetReadDeadline(time.Now().Add(time.Second * 5))
+			if t.proxy.ReadTimeout > 0 {
+				_ = conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(t.proxy.ReadTimeout)))
+			}
 			n, err := conn.Read(buf)
 			if err != nil {
 				_ = remoteConn.Close()
