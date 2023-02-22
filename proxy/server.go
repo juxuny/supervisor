@@ -90,6 +90,9 @@ func (t *Server) transfer(ctx context.Context, cancel context.CancelFunc, from n
 			return
 		default:
 		}
+		if t.proxy.ReadTimeout > 0 {
+			_ = from.SetReadDeadline(time.Now().Add(time.Second * time.Duration(t.proxy.ReadTimeout)))
+		}
 		n, err := from.Read(buf)
 		if err != nil {
 			cancel()

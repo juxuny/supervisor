@@ -10,6 +10,7 @@ type Proxy struct {
 	ControlPort uint32 `json:"control_port" yaml:"control_port"`
 	ListenPort  uint32 `json:"listen_port" yaml:"listen_port"`
 	Remote      string `json:"remote" yaml:"remote"`
+	ReadTimeout uint32 `json:"read_timeout" yaml:"read_timeout"`
 }
 
 type Config struct {
