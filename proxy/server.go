@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
 	"github.com/juxuny/env"
 	"github.com/pkg/errors"
@@ -79,6 +80,29 @@ func (t *Server) start() {
 	}
 }
 
+func (t *Server) transfer(ctx context.Context, cancel context.CancelFunc, from net.Conn, to net.Conn) {
+	buf := make([]byte, BlockSize)
+	for {
+		select {
+		case <-ctx.Done():
+			_ = from.Close()
+			_ = to.Close()
+			return
+		default:
+		}
+		n, err := from.Read(buf)
+		if err != nil {
+			cancel()
+			return
+		}
+		_, err = to.Write(buf[:n])
+		if err != nil {
+			cancel()
+			return
+		}
+	}
+}
+
 func (t *Server) serveClient(conn net.Conn) {
 	remoteConn, err := net.Dial("tcp", t.proxy.Remote)
 	if err != nil {
@@ -87,35 +111,38 @@ func (t *Server) serveClient(conn net.Conn) {
 		}
 		return
 	}
-	go func() {
-		buf := make([]byte, BlockSize)
-		for {
-			_ = conn.SetReadDeadline(time.Now().Add(time.Second * 5))
-			n, err := conn.Read(buf)
-			if err != nil {
-				_ = remoteConn.Close()
-				return
-			}
-			_, err = remoteConn.Write(buf[:n])
-			if err != nil {
-				_ = conn.Close()
-				return
-			}
-		}
-	}()
-	buf := make([]byte, BlockSize)
-	for {
-		n, err := remoteConn.Read(buf)
-		if err != nil {
-			_ = conn.Close()
-			return
-		}
-		_, err = conn.Write(buf[:n])
-		if err != nil {
-			_ = remoteConn.Close()
-			return
-		}
-	}
+	//go func() {
+	//	buf := make([]byte, BlockSize)
+	//	for {
+	//		_ = conn.SetReadDeadline(time.Now().Add(time.Second * 5))
+	//		n, err := conn.Read(buf)
+	//		if err != nil {
+	//			_ = remoteConn.Close()
+	//			return
+	//		}
+	//		_, err = remoteConn.Write(buf[:n])
+	//		if err != nil {
+	//			_ = conn.Close()
+	//			return
+	//		}
+	//	}
+	//}()
+	//buf := make([]byte, BlockSize)
+	//for {
+	//	n, err := remoteConn.Read(buf)
+	//	if err != nil {
+	//		_ = conn.Close()
+	//		return
+	//	}
+	//	_, err = conn.Write(buf[:n])
+	//	if err != nil {
+	//		_ = remoteConn.Close()
+	//		return
+	//	}
+	//}
+	ctx, cancel := context.WithCancel(context.Background())
+	go t.transfer(ctx, cancel, conn, remoteConn)
+	go t.transfer(ctx, cancel, remoteConn, conn)
 }
 
 func (t *Server) Status() (ret *Status, err error) {
