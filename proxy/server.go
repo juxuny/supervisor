@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-const BlockSize = 10 * (1 << 20) // 10M
+const BlockSize = 10 * (1 << 10) // 1k
 
 type IServer interface {
 	Start()
@@ -71,10 +71,12 @@ func (t *Server) start() {
 		if err != nil {
 			failedCount += 1
 			if failedCount > 5 {
+				fmt.Println("failed count:", failedCount)
 				break
 			}
 			continue
 		}
+		//fmt.Println("accepted: ", client.RemoteAddr())
 		go t.serveClient(client)
 		failedCount = 0
 	}
@@ -82,16 +84,19 @@ func (t *Server) start() {
 
 func (t *Server) transfer(ctx context.Context, cancel context.CancelFunc, from net.Conn, to net.Conn) {
 	buf := make([]byte, BlockSize)
+	defer func() {
+		_ = from.Close()
+		_ = to.Close()
+	}()
 	for {
 		select {
 		case <-ctx.Done():
-			_ = from.Close()
-			_ = to.Close()
 			return
 		default:
 		}
 		if t.proxy.ReadTimeout > 0 {
-			_ = from.SetReadDeadline(time.Now().Add(time.Second * time.Duration(t.proxy.ReadTimeout)))
+			_ = from.SetDeadline(time.Now().Add(time.Second * time.Duration(t.proxy.ReadTimeout)))
+			_ = to.SetDeadline(time.Now().Add(time.Second * time.Duration(t.proxy.ReadTimeout)))
 		}
 		n, err := from.Read(buf)
 		if err != nil {
