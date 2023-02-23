@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/juxuny/env"
+	"github.com/juxuny/supervisor/log"
+	"github.com/juxuny/supervisor/trace"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"net"
@@ -39,7 +41,7 @@ func (t *Server) Start() {
 		func() {
 			defer func() {
 				if err := recover(); err != nil {
-					fmt.Println(err)
+					log.Error(err)
 					debug.PrintStack()
 				}
 			}()
@@ -54,7 +56,7 @@ func (t *Server) UpdateRemote(remote string) error {
 	defer t.Unlock()
 	t.proxy.Remote = remote
 	if err := SaveRemote(int(t.proxy.ControlPort), remote); err != nil {
-		fmt.Println(err)
+		log.Error(err)
 	}
 	return nil
 }
@@ -62,7 +64,7 @@ func (t *Server) UpdateRemote(remote string) error {
 func (t *Server) start() {
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", t.proxy.ListenPort))
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return
 	}
 	failedCount := 0
@@ -71,13 +73,16 @@ func (t *Server) start() {
 		if err != nil {
 			failedCount += 1
 			if failedCount > 5 {
-				fmt.Println("failed count:", failedCount)
+				log.Error("failed count:", failedCount)
 				break
 			}
 			continue
 		}
-		//fmt.Println("accepted: ", client.RemoteAddr())
-		go t.serveClient(client)
+		log.Info("accepted:", client.RemoteAddr().String())
+		trace.GoRun(func() {
+			trace.InitReqId()
+			t.serveClient(client)
+		})
 		failedCount = 0
 	}
 }
@@ -114,11 +119,13 @@ func (t *Server) transfer(ctx context.Context, cancel context.CancelFunc, from n
 func (t *Server) serveClient(conn net.Conn) {
 	remoteConn, err := net.Dial("tcp", t.proxy.Remote)
 	if err != nil {
+		log.Info("connect to backend failed:", err)
 		if err := conn.Close(); err != nil {
-			fmt.Println(err)
+			log.Error(err)
 		}
 		return
 	}
+	log.Info("connected to backend:", t.proxy.Remote)
 	//go func() {
 	//	buf := make([]byte, BlockSize)
 	//	for {
@@ -149,8 +156,16 @@ func (t *Server) serveClient(conn net.Conn) {
 	//	}
 	//}
 	ctx, cancel := context.WithCancel(context.Background())
-	go t.transfer(ctx, cancel, conn, remoteConn)
-	go t.transfer(ctx, cancel, remoteConn, conn)
+	trace.GoRun(func() {
+		log.Infof("start pass to backend, remote addr: ", remoteConn.RemoteAddr().String())
+		t.transfer(ctx, cancel, conn, remoteConn)
+	})
+	trace.GoRun(func() {
+		log.Infof("start pass to client, remote addr: ", conn.RemoteAddr().String())
+		t.transfer(ctx, cancel, remoteConn, conn)
+	})
+	//go t.transfer(ctx, cancel, conn, remoteConn)
+	//go t.transfer(ctx, cancel, remoteConn, conn)
 }
 
 func (t *Server) Status() (ret *Status, err error) {
