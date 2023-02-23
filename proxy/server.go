@@ -68,6 +68,7 @@ func (t *Server) start() {
 		return
 	}
 	failedCount := 0
+	trace.InitReqId("start")
 	for {
 		client, err := ln.Accept()
 		if err != nil {
@@ -76,6 +77,7 @@ func (t *Server) start() {
 				log.Error("failed count:", failedCount)
 				break
 			}
+			log.Error(err)
 			continue
 		}
 		log.Info("accepted:", client.RemoteAddr().String())
@@ -100,16 +102,22 @@ func (t *Server) transfer(ctx context.Context, cancel context.CancelFunc, from n
 		default:
 		}
 		if t.proxy.ReadTimeout > 0 {
-			_ = from.SetDeadline(time.Now().Add(time.Second * time.Duration(t.proxy.ReadTimeout)))
-			_ = to.SetDeadline(time.Now().Add(time.Second * time.Duration(t.proxy.ReadTimeout)))
+			if err := from.SetDeadline(time.Now().Add(time.Second * time.Duration(t.proxy.ReadTimeout))); err != nil {
+				log.Error(err)
+			}
+			if err := to.SetDeadline(time.Now().Add(time.Second * time.Duration(t.proxy.ReadTimeout))); err != nil {
+				log.Error(err)
+			}
 		}
 		n, err := from.Read(buf)
 		if err != nil {
+			log.Error(err)
 			cancel()
 			return
 		}
 		_, err = to.Write(buf[:n])
 		if err != nil {
+			log.Error(err)
 			cancel()
 			return
 		}
@@ -157,13 +165,16 @@ func (t *Server) serveClient(conn net.Conn) {
 	//}
 	ctx, cancel := context.WithCancel(context.Background())
 	trace.GoRun(func() {
-		log.Infof("start pass to backend, remote addr: ", remoteConn.RemoteAddr().String())
+		log.Info("start pass to_backend, remote addr: ", remoteConn.RemoteAddr().String())
 		t.transfer(ctx, cancel, conn, remoteConn)
+		log.Info("finished to_backend")
 	})
 	trace.GoRun(func() {
-		log.Infof("start pass to client, remote addr: ", conn.RemoteAddr().String())
+		log.Info("start pass to_client, remote addr: ", conn.RemoteAddr().String())
 		t.transfer(ctx, cancel, remoteConn, conn)
+		log.Info("finished to_client")
 	})
+	<-ctx.Done()
 	//go t.transfer(ctx, cancel, conn, remoteConn)
 	//go t.transfer(ctx, cancel, remoteConn, conn)
 }

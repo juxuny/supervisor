@@ -42,7 +42,7 @@ func InitReqId(reqId ...string) {
 		} else {
 			newReqId = "prod" + genReqId(20)
 		}
-		reqIdMap.LoadOrStore(id, newReqId)
+		reqIdMap.Store(id, newReqId)
 	} else {
 		reqIdMap.Store(id, reqId[0])
 	}
