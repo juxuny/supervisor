@@ -9,6 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"net"
+	"net/http"
+	_ "net/http/pprof"
 	"path"
 	"runtime/debug"
 	"strings"
@@ -37,6 +39,9 @@ func NewServer(proxy Proxy) IServer {
 }
 
 func (t *Server) Start() {
+	go func() {
+		log.Println(http.ListenAndServe(":6060", nil))
+	}()
 	for {
 		func() {
 			defer func() {
