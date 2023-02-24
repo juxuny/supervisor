@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-var logger = log.NewLogger("[su]")
+var logger = log.NewPrefix("[su]")
 
 var (
 	rootCmd = &cobra.Command{

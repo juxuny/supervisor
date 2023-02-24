@@ -79,7 +79,7 @@ func main() {
 			ControlPort: uint32(env.GetInt("CONTROL_PORT", 50050)),
 			ListenPort:  uint32(env.GetInt("LISTEN_PORT", 8888)),
 			Remote:      env.GetString("REMOTE", ""),
-			ReadTimeout: env.GetInt("READ_TIMEOUT", 15),
+			ReadTimeout: uint32(env.GetInt("READ_TIMEOUT", 10)),
 		}}
 	} else {
 		proxyConfig, err = pb.Parse(configFile)
