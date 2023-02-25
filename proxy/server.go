@@ -120,10 +120,6 @@ func (t *Server) serveClient(conn net.Conn) {
 		}
 		return
 	}
-	defer func() {
-		_ = remoteConn.Close()
-		_ = conn.Close()
-	}()
 	log.Info("connected to backend:", t.proxy.Remote)
 	go t.transfer(remoteConn, conn)
 	go t.transfer(conn, remoteConn)
