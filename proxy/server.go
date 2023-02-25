@@ -124,15 +124,9 @@ func (t *Server) serveClient(conn net.Conn) {
 		_ = remoteConn.Close()
 		_ = conn.Close()
 	}()
-	errChan := make(chan error, 1)
 	log.Info("connected to backend:", t.proxy.Remote)
-	trace.GoRun(func() {
-		t.transfer(remoteConn, conn)
-	})
-	trace.GoRun(func() {
-		t.transfer(conn, remoteConn)
-	})
-	<-errChan
+	go t.transfer(remoteConn, conn)
+	go t.transfer(conn, remoteConn)
 }
 
 func (t *Server) Status() (ret *Status, err error) {
