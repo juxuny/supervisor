@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	LogServerPrefix = env.GetString("LOG_SERVER_PREFIX")
+	logServerPrefix = env.GetString("LOG_SERVER_PREFIX")
 )
 
 const rpcLogTimeout = time.Millisecond * 10
@@ -129,7 +129,7 @@ func (l *Logger) Debug(v ...interface{}) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), rpcLogTimeout)
 	defer cancel()
-	_ = rpcLogger.Add(ctx, LogServerPrefix, message)
+	_ = rpcLogger.Add(ctx, logServerPrefix, message)
 }
 
 func (l *Logger) Debugf(format string, v ...interface{}) {
@@ -142,7 +142,7 @@ func (l *Logger) Debugf(format string, v ...interface{}) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), rpcLogTimeout)
 	defer cancel()
-	_ = rpcLogger.Add(ctx, LogServerPrefix, message)
+	_ = rpcLogger.Add(ctx, logServerPrefix, message)
 }
 
 func (l *Logger) Info(v ...interface{}) {
@@ -155,7 +155,7 @@ func (l *Logger) Info(v ...interface{}) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), rpcLogTimeout)
 	defer cancel()
-	_ = rpcLogger.Add(ctx, LogServerPrefix, message)
+	_ = rpcLogger.Add(ctx, logServerPrefix, message)
 }
 
 func (l *Logger) Infof(format string, v ...interface{}) {
@@ -168,7 +168,7 @@ func (l *Logger) Infof(format string, v ...interface{}) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), rpcLogTimeout)
 	defer cancel()
-	_ = rpcLogger.Add(ctx, LogServerPrefix, message)
+	_ = rpcLogger.Add(ctx, logServerPrefix, message)
 }
 
 func (l *Logger) Print(v ...interface{}) {
@@ -181,7 +181,7 @@ func (l *Logger) Print(v ...interface{}) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), rpcLogTimeout)
 	defer cancel()
-	_ = rpcLogger.Add(ctx, LogServerPrefix, message)
+	_ = rpcLogger.Add(ctx, logServerPrefix, message)
 }
 
 func (l *Logger) Println(v ...interface{}) {
@@ -194,7 +194,7 @@ func (l *Logger) Println(v ...interface{}) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), rpcLogTimeout)
 	defer cancel()
-	_ = rpcLogger.Add(ctx, LogServerPrefix, message)
+	_ = rpcLogger.Add(ctx, logServerPrefix, message)
 }
 
 func (l *Logger) Printf(format string, v ...interface{}) {
@@ -207,7 +207,7 @@ func (l *Logger) Printf(format string, v ...interface{}) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), rpcLogTimeout)
 	defer cancel()
-	_ = rpcLogger.Add(ctx, LogServerPrefix, message)
+	_ = rpcLogger.Add(ctx, logServerPrefix, message)
 }
 
 func (l *Logger) Warning(v ...interface{}) {
@@ -220,7 +220,7 @@ func (l *Logger) Warning(v ...interface{}) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), rpcLogTimeout)
 	defer cancel()
-	_ = rpcLogger.Add(ctx, LogServerPrefix, message)
+	_ = rpcLogger.Add(ctx, logServerPrefix, message)
 }
 
 func (l *Logger) Warn(v ...interface{}) {
@@ -233,7 +233,7 @@ func (l *Logger) Warn(v ...interface{}) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), rpcLogTimeout)
 	defer cancel()
-	_ = rpcLogger.Add(ctx, LogServerPrefix, message)
+	_ = rpcLogger.Add(ctx, logServerPrefix, message)
 }
 
 func (l *Logger) Warnf(format string, v ...interface{}) {
@@ -246,7 +246,7 @@ func (l *Logger) Warnf(format string, v ...interface{}) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), rpcLogTimeout)
 	defer cancel()
-	_ = rpcLogger.Add(ctx, LogServerPrefix, message)
+	_ = rpcLogger.Add(ctx, logServerPrefix, message)
 }
 
 func (l *Logger) Error(v ...interface{}) {
@@ -259,7 +259,7 @@ func (l *Logger) Error(v ...interface{}) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), rpcLogTimeout)
 	defer cancel()
-	_ = rpcLogger.Add(ctx, LogServerPrefix, message)
+	_ = rpcLogger.Add(ctx, logServerPrefix, message)
 }
 
 func (l *Logger) Errorf(format string, v ...interface{}) {
@@ -272,7 +272,7 @@ func (l *Logger) Errorf(format string, v ...interface{}) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), rpcLogTimeout)
 	defer cancel()
-	_ = rpcLogger.Add(ctx, LogServerPrefix, message)
+	_ = rpcLogger.Add(ctx, logServerPrefix, message)
 }
 
 func (l *Logger) Fatal(v ...interface{}) {
@@ -285,7 +285,7 @@ func (l *Logger) Fatal(v ...interface{}) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), rpcLogTimeout)
 	defer cancel()
-	_ = rpcLogger.Add(ctx, LogServerPrefix, message)
+	_ = rpcLogger.Add(ctx, logServerPrefix, message)
 }
 
 func (l *Logger) Fatalf(format string, v ...interface{}) {
@@ -298,7 +298,7 @@ func (l *Logger) Fatalf(format string, v ...interface{}) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), rpcLogTimeout)
 	defer cancel()
-	_ = rpcLogger.Add(ctx, LogServerPrefix, message)
+	_ = rpcLogger.Add(ctx, logServerPrefix, message)
 }
 
 // 日志输出时附带数据参数
