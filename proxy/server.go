@@ -1,12 +1,14 @@
 package proxy
 
 import (
+	"compress/gzip"
 	"context"
 	"fmt"
 	"github.com/juxuny/env"
 	"github.com/juxuny/supervisor/log"
 	"github.com/juxuny/supervisor/trace"
 	"github.com/pkg/errors"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -50,7 +52,11 @@ func (t *Server) Start() {
 					debug.PrintStack()
 				}
 			}()
-			t.start()
+			if t.proxy.Http {
+				t.startHttpProxy()
+			} else {
+				t.start()
+			}
 		}()
 		time.Sleep(time.Second * 3)
 	}
@@ -64,6 +70,58 @@ func (t *Server) UpdateRemote(remote string) error {
 		log.Error(err)
 	}
 	return nil
+}
+
+func (t *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	requestPath := fmt.Sprintf("http://%s%s", t.proxy.Remote, r.RequestURI)
+	req, err := http.NewRequest(r.Method, requestPath, r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		log.Error("http error,", http.StatusBadGateway, r.RequestURI)
+		return
+	}
+	for k, h := range r.Header {
+		for _, v := range h {
+			log.Debugf("%v=%v", k, v)
+			req.Header.Add(k, v)
+		}
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusBadGateway)
+		log.Error("http error", http.StatusBadGateway, req.RequestURI)
+		return
+	}
+	defer resp.Body.Close()
+	log.Debug(req.URL.String())
+	w.WriteHeader(resp.StatusCode)
+	for k, h := range resp.Header {
+		for _, v := range h {
+			log.Debugf("%v=%v", k, v)
+			w.Header().Add(k, v)
+		}
+	}
+	if !resp.Uncompressed {
+		reader, err := gzip.NewReader(resp.Body)
+		if err != nil {
+			log.Error(err)
+		}
+		log.Debug("uncompress")
+		_, err = io.Copy(w, reader)
+	} else {
+		_, err = io.Copy(w, resp.Body)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+}
+
+func (t *Server) startHttpProxy() {
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", t.proxy.ListenPort), t); err != nil {
+		log.Error(err)
+	}
 }
 
 func (t *Server) start() {
