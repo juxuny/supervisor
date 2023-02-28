@@ -80,12 +80,8 @@ func (t *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Error("http error,", http.StatusBadGateway, r.RequestURI)
 		return
 	}
-	for k, h := range r.Header {
-		for _, v := range h {
-			log.Debugf("%v=%v", k, v)
-			req.Header.Add(k, v)
-		}
-	}
+	delHopHeaders(r.Header)
+	copyHeader(req.Header, r.Header)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Error(err)
@@ -94,15 +90,11 @@ func (t *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
+	delHopHeaders(resp.Header)
 	log.Debug(req.URL.String())
+	copyHeader(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
-	for k, h := range resp.Header {
-		for _, v := range h {
-			log.Debugf("%v=%v", k, v)
-			w.Header().Add(k, v)
-		}
-	}
-	if !resp.Uncompressed {
+	if strings.Contains(resp.Header.Get("Content-Encoding"), "gzip") && !resp.Uncompressed {
 		reader, err := gzip.NewReader(resp.Body)
 		if err != nil {
 			log.Error(err)
