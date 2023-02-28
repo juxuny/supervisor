@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"compress/gzip"
-	"context"
 	"fmt"
 	"github.com/juxuny/env"
 	"github.com/juxuny/supervisor/log"
