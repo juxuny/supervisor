@@ -152,37 +152,20 @@ func (t *Server) start() {
 	}
 }
 
-func (t *Server) transfer(ctx context.Context, cancel context.CancelFunc, from net.Conn, to net.Conn) {
-	buf := make([]byte, BlockSize)
+func (t *Server) transfer(from net.Conn, to net.Conn) {
 	defer func() {
 		_ = from.Close()
 		_ = to.Close()
 	}()
+	buf := make([]byte, BlockSize)
 	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-		if t.proxy.ReadTimeout > 0 {
-			if err := from.SetDeadline(time.Now().Add(time.Second * time.Duration(t.proxy.ReadTimeout))); err != nil {
-				log.Error(err)
-			}
-			if err := to.SetDeadline(time.Now().Add(time.Second * time.Duration(t.proxy.ReadTimeout))); err != nil {
-				log.Error(err)
-			}
-		}
 		n, err := from.Read(buf)
 		if err != nil {
-			log.Error(err)
-			cancel()
-			return
+			break
 		}
 		_, err = to.Write(buf[:n])
 		if err != nil {
-			log.Error(err)
-			cancel()
-			return
+			break
 		}
 	}
 }
@@ -197,49 +180,8 @@ func (t *Server) serveClient(conn net.Conn) {
 		return
 	}
 	log.Info("connected to backend:", t.proxy.Remote)
-	//go func() {
-	//	buf := make([]byte, BlockSize)
-	//	for {
-	//		_ = conn.SetReadDeadline(time.Now().Add(time.Second * 5))
-	//		n, err := conn.Read(buf)
-	//		if err != nil {
-	//			_ = remoteConn.Close()
-	//			return
-	//		}
-	//		_, err = remoteConn.Write(buf[:n])
-	//		if err != nil {
-	//			_ = conn.Close()
-	//			return
-	//		}
-	//	}
-	//}()
-	//buf := make([]byte, BlockSize)
-	//for {
-	//	n, err := remoteConn.Read(buf)
-	//	if err != nil {
-	//		_ = conn.Close()
-	//		return
-	//	}
-	//	_, err = conn.Write(buf[:n])
-	//	if err != nil {
-	//		_ = remoteConn.Close()
-	//		return
-	//	}
-	//}
-	ctx, cancel := context.WithCancel(context.Background())
-	trace.GoRun(func() {
-		log.Info("start pass to_backend, remote addr: ", remoteConn.RemoteAddr().String())
-		t.transfer(ctx, cancel, conn, remoteConn)
-		log.Info("finished to_backend")
-	})
-	trace.GoRun(func() {
-		log.Info("start pass to_client, remote addr: ", conn.RemoteAddr().String())
-		t.transfer(ctx, cancel, remoteConn, conn)
-		log.Info("finished to_client")
-	})
-	<-ctx.Done()
-	//go t.transfer(ctx, cancel, conn, remoteConn)
-	//go t.transfer(ctx, cancel, remoteConn, conn)
+	go t.transfer(remoteConn, conn)
+	go t.transfer(conn, remoteConn)
 }
 
 func (t *Server) Status() (ret *Status, err error) {
