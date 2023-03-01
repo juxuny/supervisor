@@ -1,13 +1,11 @@
 package proxy
 
 import (
-	"compress/gzip"
 	"fmt"
 	"github.com/juxuny/env"
 	"github.com/juxuny/supervisor/log"
 	"github.com/juxuny/supervisor/trace"
 	"github.com/pkg/errors"
-	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -94,18 +92,13 @@ func (t *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Debug(req.URL.String())
 	copyHeader(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
-	if strings.Contains(resp.Header.Get("Content-Encoding"), "gzip") && !resp.Uncompressed {
-		reader, err := gzip.NewReader(resp.Body)
-		if err != nil {
-			log.Error(err)
-		}
-		log.Debug("uncompress")
-		_, err = io.Copy(w, reader)
-	} else {
-		_, err = io.Copy(w, resp.Body)
-		if err != nil {
-			log.Error(err)
-		}
+	buf, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Error(err)
+	}
+	_, err = w.Write(buf)
+	if err != nil {
+		log.Error(err)
 	}
 }
 

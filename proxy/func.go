@@ -1,6 +1,9 @@
 package proxy
 
-import "net/http"
+import (
+	"github.com/juxuny/supervisor/log"
+	"net/http"
+)
 
 // Hop-by-hop headers. These are removed when sent to the backend.
 // http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html
@@ -18,6 +21,7 @@ var hopHeaders = []string{
 func copyHeader(dst, src http.Header) {
 	for k, vv := range src {
 		for _, v := range vv {
+			log.Debugf("resp header, %s = %s", k, v)
 			dst.Add(k, v)
 		}
 	}
