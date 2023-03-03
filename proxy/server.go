@@ -29,11 +29,22 @@ type Server struct {
 	proxy Proxy
 	sync.Mutex
 
-	ln net.Listener
+	ln     net.Listener
+	client http.Client
 }
 
 func NewServer(proxy Proxy) IServer {
-	s := &Server{proxy: proxy}
+	s := &Server{
+		proxy: proxy,
+		client: http.Client{
+			Transport: &http.Transport{
+				MaxIdleConnsPerHost: 200,
+			},
+		},
+	}
+	if proxy.ReadTimeout > 0 {
+		s.client.Timeout = time.Duration(proxy.ReadTimeout) * time.Second
+	}
 	return s
 }
 
@@ -80,14 +91,13 @@ func (t *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	delHopHeaders(r.Header)
 	copyHeader(req.Header, r.Header)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := t.client.Do(req)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusBadGateway)
 		log.Error("http error", http.StatusBadGateway, req.RequestURI)
 		return
 	}
-	defer resp.Body.Close()
 	delHopHeaders(resp.Header)
 	log.Debug(req.URL.String())
 	copyHeader(w.Header(), resp.Header)
@@ -96,6 +106,7 @@ func (t *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error(err)
 	}
+	_ = resp.Body.Close()
 	_, err = w.Write(buf)
 	if err != nil {
 		log.Error(err)
