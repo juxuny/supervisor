@@ -21,7 +21,7 @@ var hopHeaders = []string{
 func copyHeader(dst, src http.Header) {
 	for k, vv := range src {
 		for _, v := range vv {
-			log.Debugf("resp header, %s = %s", k, v)
+			log.Debugf("src header, %s = %s", k, v)
 			dst.Add(k, v)
 		}
 	}

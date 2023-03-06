@@ -40,6 +40,9 @@ func NewServer(proxy Proxy) IServer {
 			Transport: &http.Transport{
 				MaxIdleConnsPerHost: 200,
 			},
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
 		},
 	}
 	if proxy.ReadTimeout > 0 {
